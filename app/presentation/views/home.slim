@@ -1,0 +1,14 @@
+div class="product-tile tile-white" style="padding: 120px 0;"
+  div class="container"
+    h1 class="hero-display" FaceCloak
+    p class="lead-airy" Privacy, reimagined. Manage privacy for detected faces with precision and elegance.
+
+    - if current_account.nil?
+      div class="mt-5"
+        a class="btn btn-primary btn-large" href='/auth/login' Get Started
+    - else
+      div class="mt-5"
+        p class="lead"
+          | Welcome back, 
+          span class="fw-bold" = current_account['username']
+        a class="btn btn-primary mt-3" href='/images' Go to Feed

@@ -1,0 +1,14 @@
+_*
+!app/presentation/views/_*.slim
+config/secrets.yml
+*.log
+.DS_Store
+tmp/
+.bundle/
+vendor/bundle
+CLAUDE.local.md
+.gemini/*
+!.gemini/GEMINI.md
+!.gemini/settings.json
+!.gemini/skills/
+!.gemini/plans/

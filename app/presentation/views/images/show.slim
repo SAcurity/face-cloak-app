@@ -1,0 +1,27 @@
+div class="product-tile tile-white"
+  div class="container"
+    div class="d-flex justify-content-between align-items-center mb-4"
+      div class="text-start"
+        h1 class="mb-0" Image ##{image['id'][0..7]}
+        p class="lead" Uploaded by User ##{image['owner_id']}
+      
+      div class="d-flex align-items-center"
+        - if is_owner
+          div class="btn-group me-3" role="group"
+            a href="?view=protected" class="btn btn-sm #{view_type == 'protected' ? 'btn-primary' : 'btn-outline-primary'}" Protected
+            a href="?view=raw" class="btn btn-sm #{view_type == 'raw' ? 'btn-primary' : 'btn-outline-primary'}" Raw (Original)
+        
+        a href="/images/#{image['id']}/logs" class="btn btn-sm btn-outline-secondary" View Logs
+
+    div class="text-center"
+      - if view_type == 'raw' && is_owner
+        img src="/images/#{image['id']}/raw_image" class="feed-image"
+        p class="mt-2 text-danger" 
+          i ● RAW VIEW (Original data visible to you as Owner)
+      - else
+        img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="feed-image"
+        p class="mt-2 text-muted" 
+          i ● PROTECTED VIEW (Privacy filters applied)
+
+    div class="mt-5"
+      a href="/images" class="text-link text-primary text-decoration-none" ← Back to Feed

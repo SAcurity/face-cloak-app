@@ -1,0 +1,14 @@
+- images.each_with_index do |img, index|
+  - bg_class = index.even? ? 'tile-white' : 'tile-parchment'
+  div class="product-tile #{bg_class}"
+    div class="container"
+      h2 class="display-lg" Image ##{img['id'][0..7]}
+      p class="lead" Uploaded by User ##{img['owner_id']}
+      
+      div class="text-center"
+        a href="/images/#{img['id']}"
+          img src="#{FaceCloak::App.config.API_URL}/images/#{img['id']}" class="feed-image"
+      
+      div class="mt-4"
+        a href="/images/#{img['id']}/logs" class="text-link text-primary text-decoration-none" 
+          | View Audit Logs →

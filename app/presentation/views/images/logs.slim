@@ -1,0 +1,27 @@
+div class="product-tile tile-white"
+  div class="container"
+    h1 class="mb-4" Logs for Image ##{image_id[0..7]}
+
+    div class="card overflow-hidden"
+      table class="table table-striped mb-0"
+        thead class="bg-light"
+          tr
+            th ID
+            th Face ID
+            th Action
+            th Actor
+            th Cloak
+            th Timestamp
+        tbody
+          - logs.each do |log|
+            tr
+              td = log['id']
+              td = log['face_record_id'][0..7]
+              td 
+                span class="badge bg-info" = log['action']
+              td = log['actor_id']
+              td = log['cloak_type']
+              td = log['created_at']
+
+    div class="mt-5"
+      a href="/images/#{image_id}" class="text-link text-primary text-decoration-none" ← Back to Image
