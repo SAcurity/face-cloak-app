@@ -7,8 +7,14 @@ module FaceCloak
       @client = ApiClient.new(config)
     end
 
-    def call(owner_id: nil)
-      images = @client.get('/images').fetch('data', []).map do |img| 
+    def call(owner_id: nil, current_account_id: nil)
+      response = if current_account_id
+                   @client.authenticated_get('/images', current_account_id: current_account_id)
+                 else
+                   @client.get('/images')
+                 end
+      
+      images = response.fetch('data', []).map do |img| 
         img['attributes']
       end
       

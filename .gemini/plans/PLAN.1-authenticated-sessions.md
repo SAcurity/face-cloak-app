@@ -41,3 +41,25 @@ Bootstrap the FaceCloak Web App frontend using the Roda/Slim architecture, imple
 - **Thin Controllers**: Controllers focus on routing and session management.
 - **Slim Templates**: Logic-less views using partials and layouts.
 - **X-Actor-Id Header**: Pattern for passing the authenticated user's ID to the API.
+
+## Post-Bootstrap Refinement & Apple Aesthetic Overhaul [COMPLETED]
+
+### UI/UX Refinement
+- [x] **Consolidated Black Nav Bar**: Replaced multiple layers with a single, high-contrast frosted black bar at the very top.
+- [x] **Dual Navigation Controls**: Separated global "Home" and contextual "Back" controls; "Back" is now located at the top of the content area and correctly utilizes browser history.
+- [x] **App-Shell Architecture**: Refactored the layout so only the main content scrolls, keeping the header fixed and ensuring the scrollbar doesn't reach the navigation area.
+- [x] **Segmented Control Filter**: Grouped Protected/Raw view filters into a unified Apple-style pill-switch.
+- [x] **Elegant Buttons**: Sized buttons proportionally to avoid full-width "top-fill" behavior.
+- [x] **Toast Notifications**: Implemented a modern, bottom-left sliding toast that auto-dismisses after 5 seconds.
+- [x] **View Transitions**: Implemented a smooth sliding "pill" transition for the Protected/Raw toggle switch using the View Transitions API for a tactile feel.
+
+### Functional Enhancements
+- [x] **Face Identification**: Shifted from general "ownership transfer" to specific **Face Assignment** using the `POST /face_records/:id/assignment` API.
+- [x] **Raw View Data Correction**: Fixed a backend variable clashing issue to ensure raw images load correctly with the proper Content-Type.
+- [x] **Public Home Feed**: Switched Home page to use the reliable unauthenticated feed for "Recent Activity," ensuring images are always visible.
+- [x] **Deep Image Fetching**: Updated `GetImage` service to hit the detailed image endpoint, ensuring detected faces are loaded for the assignment UI.
+
+### Aesthetic & Styling
+- [x] **SF Pro Typography**: Integrated full design tokens for SF Pro Display and Text.
+- [x] **Avatar Refinement**: Adjusted avatar colors to ensure contrast with Action Blue interactive elements.
+- [x] **Clean Gallery**: Refined the feed and image show pages to follow a museum-gallery aesthetic with alternating canvas backgrounds.

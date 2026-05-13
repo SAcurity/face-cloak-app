@@ -9,16 +9,18 @@ module FaceCloak
   # Base class for the FaceCloak Web App
   class App < Roda
     include AvatarHelper
+    include NavigationHelper
     use Rack::MethodOverride
 
     plugin :render, engine: 'slim', views: 'app/presentation/views'
-    plugin :assets, css: 'style.css', path: 'app/presentation/assets'
+    plugin :assets, css: 'style.css', js: 'main.js', path: 'app/presentation/assets'
     plugin :public, root: 'app/presentation/public'
     plugin :multi_route
     plugin :flash
     plugin :all_verbs
 
     route do |routing|
+      @routing = routing
       response['Content-Type'] = 'text/html; charset=utf-8'
       @current_account = session[:current_account]
 
@@ -28,7 +30,24 @@ module FaceCloak
 
       # GET /
       routing.root do
-        view 'home', locals: { current_account: @current_account }
+        query = routing.params['query'].to_s.strip
+        normalized_query = query.downcase
+        begin
+          images = ListImages.new(FaceCloak::App.config).call
+          unless normalized_query.empty?
+            images = images.select do |image|
+              [
+                image['id'],
+                image['file_name'],
+                image['owner_id']
+              ].compact.any? { |value| value.to_s.downcase.include?(normalized_query) }
+            end
+          end
+        rescue StandardError => e
+          puts "HOME PAGE ERROR: #{e.inspect}"
+          images = []
+        end
+        view 'home', locals: { current_account: @current_account, images: images, query: query }
       end
     end
 

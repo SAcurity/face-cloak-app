@@ -6,8 +6,8 @@ module FaceCloak
     def avatar_for(username, size: 40)
       initial = username.to_s[0]&.upcase || '?'
       color = color_for(username)
-      
-      "<div class='avatar-circle' style='width: #{size}px; height: #{size}px; background-color: #{color}; font-size: #{size / 2}px;'>
+
+      "<div class='avatar-circle' style='width: #{size}px; height: #{size}px; background-color: #{color} !important; font-size: #{size / 2}px; border: 1px solid rgba(255,255,255,0.12);'>
         #{initial}
       </div>"
     end
@@ -15,10 +15,17 @@ module FaceCloak
     private
 
     def color_for(username)
-      # Deterministic color based on username
-      hash = username.hash.abs
-      colors = %w[#0066cc #555555 #1d1d1f #7a7a7a #333333]
-      colors[hash % colors.length]
+      # Deterministic, muted palette that avoids using the primary action color
+      sum = username.to_s.each_byte.sum
+      colors = %w[
+        #6b6f77
+        #7f8a92
+        #9aa3ab
+        #a08d79
+        #8aa28a
+        #b29aa6
+      ]
+      colors[sum % colors.length]
     end
   end
 end

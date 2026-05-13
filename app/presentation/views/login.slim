@@ -1,17 +1,23 @@
-div class="row"
-  div class="col-sm-3"
-  div class="col-sm-6"
-    div class="card mb-3"
-      div class="card-header text-center bg-white" 
-        h4 Login
-      div class="card-body"
-        form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8"
-          div class="form-group mb-3"
-            label for='input-username' Username
-            input type='text' name='username' id='input-username' class="form-control" required="required"
-          div class="form-group mb-3"
-            label for='input-password' Password
-            input type='password' name='password' id='input-password' class="form-control" required="required"
+div class="row justify-content-center align-items-center" style="min-height: 70vh;"
+  div class="col-12 col-md-6 col-lg-4"
+    div class="text-center mb-5"
+      h1 class="display-md" Sign in to FaceCloak
+      p class="lead-airy" Enter your details below.
 
-          button type='submit' id='button-login' value='login' class="btn btn-primary w-100" Login
-  div class="col-sm-3"
+    div class="store-utility-card"
+      form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8"
+        div class="form-group mb-4"
+          label for='input-username' class="caption-strong mb-2 d-block" Username
+          input type='text' name='username' id='input-username' class="search-input w-100 ps-3" required="required" placeholder="Username"
+        
+        div class="form-group mb-5"
+          label for='input-password' class="caption-strong mb-2 d-block" Password
+          input type='password' name='password' id='input-password' class="search-input w-100 ps-3" required="required" placeholder="Password"
+
+        div class="text-center mt-5"
+          button type='submit' id='button-login' value='login' class="btn btn-primary btn-large px-5" Sign In
+    
+    div class="text-center mt-5"
+      p class="caption text-muted" 
+        | Don't have an account? 
+        span class="text-primary" Contact your administrator.

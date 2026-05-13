@@ -19,13 +19,13 @@ module FaceCloak
         # GET /images/[image_id]/raw_image
         routing.on 'raw_image' do
           routing.get do
-            response = HTTP.headers('X-Actor-Id' => current_account_id.to_s)
+            api_res = HTTP.headers('X-Actor-Id' => current_account_id.to_s)
                           .get("#{FaceCloak::App.config.API_URL}/images/#{image_id}/raw")
             
-            routing.halt(response.code, response.body.to_s) unless response.code == 200
+            routing.halt(api_res.code, api_res.body.to_s) unless api_res.code == 200
             
-            response['Content-Type'].each { |ct| response['Content-Type'] = ct }
-            response.body.to_s
+            response['Content-Type'] = api_res.headers['Content-Type']
+            api_res.body.to_s
           end
         end
 
@@ -39,15 +39,37 @@ module FaceCloak
             view 'images/logs', locals: { image_id: image_id, logs: logs }
           rescue StandardError => e
             flash[:error] = "Could not load logs: #{e.message}"
-            routing.redirect '/images'
+            routing.redirect '/'
+          end
+        end
+
+        # POST /images/[image_id]/faces/[face_id]
+        routing.on 'faces', String do |face_id|
+          routing.post do
+            AssignFace.new(FaceCloak::App.config).call(
+              face_id: face_id,
+              assigned_user_id: routing.params['assigned_user_id'],
+              current_account_id: current_account_id
+            )
+            flash[:notice] = 'Face assigned successfully'
+            routing.redirect "/images/#{image_id}?view=raw"
+          rescue StandardError => e
+            flash[:error] = "Could not assign face: #{e.message}"
+            routing.redirect "/images/#{image_id}?view=raw"
           end
         end
 
         # GET /images/[image_id]
         routing.is do
           routing.get do
-            image_data = GetImage.new(FaceCloak::App.config).call(image_id)
-            routing.halt 404, "Image #{image_id} not found in API" unless image_data
+            image_data = GetImage.new(FaceCloak::App.config).call(
+              image_id, 
+              current_account_id: current_account_id
+            )
+            unless image_data
+              response.status = 404
+              next "Image #{image_id} not found in API"
+            end
 
             is_owner = image_data['owner_id'].to_i == current_account_id.to_i
             view_type = routing.params['view'] || 'protected'
@@ -63,8 +85,7 @@ module FaceCloak
 
       # GET /images
       routing.get do
-        images_list = ListImages.new(FaceCloak::App.config).call
-        view 'images/index', locals: { images: images_list }
+        routing.redirect '/'
       end
 
       # POST /images
@@ -76,7 +97,7 @@ module FaceCloak
           file_name: image_file[:filename]
         )
         flash[:notice] = 'Image posted successfully'
-        routing.redirect '/images'
+        routing.redirect '/'
       rescue StandardError => e
         flash[:error] = "Could not post image: #{e.message}"
         routing.redirect '/images/new'
