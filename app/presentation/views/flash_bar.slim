@@ -1,0 +1,11 @@
+- if flash[:error] || flash[:notice]
+  div#flash-bar-container
+    div class="toast-custom #{flash[:error] ? 'alert-danger' : 'alert-success'}"
+      div class="d-flex align-items-center"
+        - if flash[:error]
+          i class="fas fa-exclamation-circle me-3 text-danger"
+        - else
+          i class="fas fa-check-circle me-3 text-success"
+        span class="body" = flash[:error] || flash[:notice]
+      button type="button" class="btn-close btn-close-white ms-auto flash-close" aria-label="Close"
+        | ×

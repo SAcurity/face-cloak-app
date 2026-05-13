@@ -1,0 +1,18 @@
+div class="product-tile tile-white"
+  div class="container"
+    div class="d-flex align-items-center justify-content-center mb-5"
+      == avatar_for(username, size: 80)
+      div class="ms-4 text-start"
+        h1 class="mb-0" = username
+        p class="text-muted" 
+          b = images.count
+          |  Posts
+    
+    div class="profile-grid"
+      - if images.any?
+        - images.each do |img|
+          a href="/images/#{img['id']}" class="grid-item"
+            img src="#{FaceCloak::App.config.API_URL}/images/#{img['id']}"
+      - else
+        div class="col-12 text-center"
+          p class="text-muted" No images posted yet.

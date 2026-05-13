@@ -1,0 +1,24 @@
+- if images && images.any?
+  div class="container pt-4 pb-5"
+    div class="row g-4"
+      - images.each do |image|
+        div class="col-12 col-md-6 col-lg-4"
+          div class="store-utility-card h-100 d-flex flex-column"
+            div class="mb-3 overflow-hidden rounded-md image-card-frame"
+              a href="/images/#{image['id']}" class="d-block h-100"
+                img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="img-fluid w-100 h-100 object-fit-cover lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
+            div class="mt-auto"
+              p class="body-strong mb-1" = image['file_name'] || "Image ##{image['id'][0..7]}"
+              p class="caption text-muted mb-3" 
+                | Owner: 
+                span class="text-primary" = "User ##{image['owner_id']}"
+              a href="/images/#{image['id']}" class="text-link text-decoration-none" 
+                | View Details 
+                i class="fas fa-chevron-right ms-1 small"
+- else
+  div class="container py-5 text-center"
+    div class="product-tile tile-white rounded-lg border"
+      i class="fas fa-camera fa-3x text-muted mb-3"
+      h3 class="display-md text-muted" No images found.
+      p class="lead-airy text-muted mb-4" Try a different search or post the first image to the feed.
+      a href="/images/new" class="btn btn-primary" Get Started

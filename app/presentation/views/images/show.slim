@@ -1,0 +1,53 @@
+div class="product-tile tile-white"
+  div class="container"
+    div class="d-flex justify-content-between align-items-center mb-4"
+      div class="text-start"
+        h1 class="mb-0" Image ##{image['id'][0..7]}
+        p class="lead" Owner: #{image['owner_username'] || "User ##{image['owner_id']}"}
+      
+      div class="d-flex align-items-center"
+        - if is_owner
+          div class="segmented-control me-3"
+            a href="?view=protected" class="btn-filter #{view_type == 'protected' ? 'active' : ''}" Protected
+            a href="?view=raw" class="btn-filter #{view_type == 'raw' ? 'active' : ''}" Raw
+        
+        a href="/images/#{image['id']}/logs" class="btn btn-sm btn-outline-secondary rounded-pill px-3" View Logs
+
+    div class="text-center position-relative"
+      - if view_type == 'raw' && is_owner
+        img src="/images/#{image['id']}/raw_image" class="feed-image" alt="Original Image"
+      - else
+        img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="feed-image" alt="Protected Image"
+
+    - if is_owner && view_type == 'raw'
+      div class="mt-5 pt-5 border-top text-start"
+        h2 class="display-md mb-4" Face Identification
+        p class="lead-airy mb-5" Assign detected faces to specific users to manage their privacy settings.
+        
+        div class="row g-4"
+          - if image['faces'] && image['faces'].any?
+            - image['faces'].each do |face|
+              div class="col-12 col-md-6 col-lg-4"
+                div class="store-utility-card h-100"
+                  div class="d-flex justify-content-between align-items-start mb-3"
+                    div
+                      span class="caption-strong text-primary text-uppercase" Face ID
+                      h3 class="body-strong mb-0" ##{face['id'][0..7]}
+                    - if face['assigned_username']
+                      span class="badge bg-success rounded-pill px-3 py-2" Assigned
+                  
+                  - if face['assigned_username']
+                    p class="body mb-3"
+                      | Currently assigned to: 
+                      span class="fw-bold" = face['assigned_username']
+                  - else
+                    p class="caption text-muted mb-3" No user assigned yet.
+
+                  form action="/images/#{image['id']}/faces/#{face['id']}" method="post"
+                    div class="d-flex gap-2"
+                      input type="text" name="assigned_user_id" class="search-input flex-grow-1" placeholder="User ID" required=true
+                      button type="submit" class="btn btn-primary btn-sm px-3" Assign
+          - else
+            div class="col-12"
+              div class="product-tile tile-parchment rounded-lg"
+                p class="lead-airy text-muted m-0" No faces detected in this image.
