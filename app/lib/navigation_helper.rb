@@ -6,7 +6,8 @@ module FaceCloak
     def parent_path(path)
       parts = path.to_s.split('/').reject(&:empty?)
       return '/' if parts.length <= 1
-      '/' + parts[0...-1].join('/')
+
+      "/#{parts[0...-1].join('/')}"
     end
   end
 end

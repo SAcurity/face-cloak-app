@@ -1,23 +1,27 @@
 div class="auth-page row justify-content-center"
   div class="col-12 col-md-6 col-lg-4"
     div class="text-center mb-5"
-      h1 class="display-md" Sign in to FaceCloak
-      p class="lead-airy" Enter your details below.
+      h1 class="display-md" Create FaceCloak account
+      p class="lead-airy" Enter your account details.
 
     div class="store-utility-card"
-      form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8"
+      form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8"
+        div class="form-group mb-4"
+          label for='input-email' class="caption-strong mb-2 d-block" Email
+          input type='email' name='email' id='input-email' class="search-input w-100 ps-3" required="required" placeholder="Email"
+
         div class="form-group mb-4"
           label for='input-username' class="caption-strong mb-2 d-block" Username
           input type='text' name='username' id='input-username' class="search-input w-100 ps-3" required="required" placeholder="Username"
-        
+
         div class="form-group mb-5"
           label for='input-password' class="caption-strong mb-2 d-block" Password
           input type='password' name='password' id='input-password' class="search-input w-100 ps-3" required="required" placeholder="Password"
 
         div class="text-center mt-5"
-          button type='submit' id='button-login' value='login' class="btn btn-primary btn-large px-5" Sign In
-    
+          button type='submit' id='button-register' value='register' class="btn btn-primary btn-large px-5" Create Account
+
     div class="text-center mt-5"
-      p class="caption text-muted" 
-        | Don't have an account? 
-        a class="text-primary text-decoration-none" href="/auth/register" Create one.
+      p class="caption text-muted"
+        | Already have an account?
+        a class="text-primary text-decoration-none ms-1" href="/auth/login" Sign in

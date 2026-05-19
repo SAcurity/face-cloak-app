@@ -17,6 +17,7 @@ html, body {
 }
 
 body {
+  min-height: 100dvh;
   font-family: "SF Pro Text", system-ui, -apple-system, sans-serif;
   font-size: 17px;
   line-height: 1.47;
@@ -27,10 +28,74 @@ body {
 }
 
 #main-content {
-  flex-grow: 1;
-  overflow-y: scroll;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   -webkit-overflow-scrolling: touch;
   background-color: var(--color-canvas);
+}
+
+#main-content.is-scrollable {
+  overflow-y: auto;
+}
+
+#main-content.is-contained {
+  display: flex;
+  align-items: flex-start;
+}
+
+#main-content.is-contained #html_body {
+  width: 100%;
+}
+
+.site-footer {
+  flex-shrink: 0;
+  background-color: #f8f9fa;
+  padding: 5px 0;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.site-footer small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.footer-divider {
+  color: #adb5bd;
+}
+
+.auth-page {
+  min-height: 100%;
+  padding-top: clamp(1.5rem, 4vh, 3rem);
+  padding-bottom: 1rem;
+}
+
+.auth-page .text-center.mb-5 {
+  margin-bottom: 1.5rem !important;
+}
+
+.auth-page .lead-airy {
+  margin-bottom: 0;
+}
+
+.auth-page .store-utility-card {
+  padding: clamp(1.25rem, 2.5vh, 2rem);
+}
+
+.auth-page .form-group.mb-4 {
+  margin-bottom: 1.15rem !important;
+}
+
+.auth-page .form-group.mb-5 {
+  margin-bottom: 1.4rem !important;
+}
+
+.auth-page .text-center.mt-5 {
+  margin-top: 1.4rem !important;
 }
 
 h1, h2, h3, .navbar-brand {
@@ -151,18 +216,18 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 }
 
 .toast-custom {
-  background-color: rgba(29, 29, 31, 0.48); /* Lighter, more transparent */
-  backdrop-filter: saturate(140%) blur(12px);
-  -webkit-backdrop-filter: saturate(140%) blur(12px);
-  color: #f8f8f8;
+  background-color: rgba(255, 255, 255, 0.84);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  color: var(--color-ink);
   border-radius: 12px;
   padding: 12px 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.10);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.72);
 }
 
 .toast-custom.alert-danger {
@@ -177,13 +242,20 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 .flash-close {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.9);
-  font-size: 18px;
+  color: #1d1d1f;
+  font-size: 15px;
   line-height: 1;
-  padding: 6px 8px;
+  padding: 6px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.flash-close:focus { outline: 2px solid rgba(255,255,255,0.12); border-radius: 6px; }
+.flash-close:hover {
+  color: var(--color-primary);
+}
+
+.flash-close:focus { outline: 2px solid rgba(0,102,204,0.18); border-radius: 6px; }
 
 @keyframes slideInLeft {
   from { transform: translateX(-120%); opacity: 0; }

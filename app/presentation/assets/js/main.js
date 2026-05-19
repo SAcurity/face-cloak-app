@@ -89,4 +89,21 @@
   } else {
     initLazyMedia();
   }
+
+  function initHistoryBack() {
+    document.querySelectorAll('[data-history-back="true"]').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        if (window.history.length <= 1) return;
+
+        e.preventDefault();
+        window.history.back();
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHistoryBack);
+  } else {
+    initHistoryBack();
+  }
 })();

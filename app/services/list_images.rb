@@ -13,13 +13,13 @@ module FaceCloak
                  else
                    @client.get('/images')
                  end
-      
-      images = response.fetch('data', []).map do |img| 
+
+      images = response.fetch('data', []).map do |img|
         img['attributes']
       end
-      
+
       return images unless owner_id
-      
+
       # Filter by owner_id if provided (simple client-side filter for now)
       images.select { |img| img['owner_id'].to_i == owner_id.to_i }
     end

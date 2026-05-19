@@ -5,14 +5,23 @@ module FaceCloak
   module AvatarHelper
     def avatar_for(username, size: 40)
       initial = username.to_s[0]&.upcase || '?'
-      color = color_for(username)
 
-      "<div class='avatar-circle' style='width: #{size}px; height: #{size}px; background-color: #{color} !important; font-size: #{size / 2}px; border: 1px solid rgba(255,255,255,0.12);'>
+      "<div class='avatar-circle' style='#{avatar_style(username, size)};'>
         #{initial}
       </div>"
     end
 
     private
+
+    def avatar_style(username, size)
+      [
+        "width: #{size}px",
+        "height: #{size}px",
+        "background-color: #{color_for(username)} !important",
+        "font-size: #{size / 2}px",
+        'border: 1px solid rgba(255,255,255,0.12)'
+      ].join('; ')
+    end
 
     def color_for(username)
       # Deterministic, muted palette that avoids using the primary action color
