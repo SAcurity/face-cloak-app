@@ -21,9 +21,9 @@ module FaceCloak
           routing.get do
             api_res = HTTP.headers('X-Actor-Id' => current_account_id.to_s)
                           .get("#{FaceCloak::App.config.API_URL}/images/#{image_id}/raw")
-            
+
             routing.halt(api_res.code, api_res.body.to_s) unless api_res.code == 200
-            
+
             response['Content-Type'] = api_res.headers['Content-Type']
             api_res.body.to_s
           end
@@ -63,7 +63,7 @@ module FaceCloak
         routing.is do
           routing.get do
             image_data = GetImage.new(FaceCloak::App.config).call(
-              image_id, 
+              image_id,
               current_account_id: current_account_id
             )
             unless image_data
@@ -74,10 +74,10 @@ module FaceCloak
             is_owner = image_data['owner_id'].to_i == current_account_id.to_i
             view_type = routing.params['view'] || 'protected'
 
-            view 'images/show', locals: { 
-              image: image_data, 
-              is_owner: is_owner, 
-              view_type: view_type 
+            view 'images/show', locals: {
+              image: image_data,
+              is_owner: is_owner,
+              view_type: view_type
             }
           end
         end

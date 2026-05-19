@@ -23,6 +23,9 @@ html
     / Custom CSS
     == assets(:css)
   body class="d-flex flex-column"
+    - current_path = @routing.path.to_s
+    - scrollable_content = current_path == '/' || current_path.start_with?('/images', '/account')
+    - show_back_button = current_path != '/' && !['/auth/login', '/auth/register'].include?(current_path)
     / Main Nav (Frosted Black)
     nav class="sub-nav"
       div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
@@ -45,15 +48,14 @@ html
             a href="/account/#{@current_account['username']}" class="text-decoration-none"
               == avatar_for(@current_account['username'], size: 32)
           - else
+            a class="nav-link text-white me-3 text-decoration-none body-strong" href="/auth/register" Register
             a class="nav-link text-white me-3 text-decoration-none body-strong" href="/auth/login" Login
 
-    main id="main-content"
+    main id="main-content" class=(scrollable_content ? 'is-scrollable' : 'is-contained')
       div class='container-fluid p-0' id='html_body'
-        - if @routing.path != "/"
-          - parts = @routing.path.to_s.split('/').reject(&:empty?)
-          - parent = parts.length <= 1 ? '/' : '/' + parts[0...-1].join('/')
+        - if show_back_button
           div class="container pt-4 pb-0 text-start"
-            a href=parent class="btn-back-capsule"
+            a href="/" class="btn-back-capsule" data-history-back="true"
               i class="fas fa-chevron-left me-2" style="font-size: 0.8em;"
               span class="caption-strong text-uppercase" Back
 
@@ -62,12 +64,12 @@ html
             == render :flash_bar
           == yield
 
-      footer class="bg-light text-center text-muted py-4 border-top mt-auto"
-        div class="container"
-          small
-            | FaceCloak is made for privacy demonstration purposes.
-            br
-            | &copy; 2026 FaceCloak. All rights reserved.
+    footer class="site-footer text-center text-muted border-top"
+      div class="container"
+        small
+          | FaceCloak is made for privacy demonstration purposes.
+          span class="footer-divider"  &middot; 
+          | &copy; 2026 FaceCloak. All rights reserved.
 
     / Scripts
     script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"

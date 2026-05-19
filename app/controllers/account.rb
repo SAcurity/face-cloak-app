@@ -16,12 +16,12 @@ module FaceCloak
           # For now, let's assume we're looking at our own profile
           # Or if we're looking at someone else's, we need their ID
           # Simplification for demo: only show own profile images
-          
+
           if username == @current_account['username']
             images = ListImages.new(App.config).call(owner_id: @current_account['id'])
             view 'account/show', locals: { username: username, images: images }
           else
-            flash[:error] = "Profile view for other users not implemented yet"
+            flash[:error] = 'Profile view for other users not implemented yet'
             routing.redirect '/'
           end
         end

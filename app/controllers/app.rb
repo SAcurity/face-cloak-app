@@ -10,6 +10,7 @@ module FaceCloak
   class App < Roda
     include AvatarHelper
     include NavigationHelper
+
     use Rack::MethodOverride
 
     plugin :render, engine: 'slim', views: 'app/presentation/views'
@@ -22,7 +23,8 @@ module FaceCloak
     route do |routing|
       @routing = routing
       response['Content-Type'] = 'text/html; charset=utf-8'
-      @current_account = session[:current_account]
+      @secure_session = SecureSession.new(session)
+      @current_account = current_account_from_session
 
       routing.public
       routing.assets
@@ -52,6 +54,14 @@ module FaceCloak
     end
 
     private
+
+    def current_account_from_session
+      @secure_session.get(:current_account)
+    rescue StandardError => e
+      App.logger.warn "SESSION READ FAILED: #{e.inspect}"
+      @secure_session.delete(:current_account)
+      nil
+    end
 
     def require_login!(routing)
       return if @current_account
