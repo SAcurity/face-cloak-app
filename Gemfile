@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 ruby File.read('.ruby-version').strip
 
 # Web
+gem 'logger', '~> 1.0'
 gem 'puma', '~>7.0'
 gem 'rack-session', '~>2.0'
 gem 'redis-rack'
