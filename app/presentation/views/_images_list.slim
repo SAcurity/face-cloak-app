@@ -11,7 +11,7 @@
               p class="body-strong mb-1" = image['file_name'] || "Image ##{image['id'][0..7]}"
               p class="caption text-muted mb-3" 
                 | Owner: 
-                span class="text-primary" = "User ##{image['owner_id']}"
+                span class="text-primary" = FaceCloak::Account.handle_for(image['owner_username'] || image['owner_id'])
               a href="/images/#{image['id']}" class="text-link text-decoration-none" 
                 | View Details 
                 i class="fas fa-chevron-right ms-1 small"

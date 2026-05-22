@@ -8,25 +8,20 @@ module FaceCloak
       @list_images = ListImages.new(config)
     end
 
-    def call(image_id, current_account_id: nil)
-      image = @list_images.call(current_account_id: current_account_id)
+    def call(image_id, auth_token: nil)
+      image = @list_images.call(auth_token: auth_token)
                           .find { |img| img['id'] == image_id }
       return nil unless image
 
-      image.merge('faces' => fetch_faces(image_id, current_account_id: current_account_id))
+      image.merge('faces' => fetch_faces(image_id, auth_token: auth_token))
     rescue StandardError
       nil
     end
 
     private
 
-    def fetch_faces(image_id, current_account_id:)
-      response = if current_account_id
-                   @client.authenticated_get("/images/#{image_id}/face_records",
-                                             current_account_id: current_account_id)
-                 else
-                   @client.get("/images/#{image_id}/face_records")
-                 end
+    def fetch_faces(image_id, auth_token:)
+      response = @client.get("/images/#{image_id}/face_records", auth_token: auth_token)
 
       response.fetch('data', []).map { |face| face['attributes'] }
     rescue StandardError

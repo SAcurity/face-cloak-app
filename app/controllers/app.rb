@@ -23,7 +23,6 @@ module FaceCloak
     route do |routing|
       @routing = routing
       response['Content-Type'] = 'text/html; charset=utf-8'
-      @secure_session = SecureSession.new(session)
       @current_account = current_account_from_session
 
       routing.public
@@ -35,7 +34,7 @@ module FaceCloak
         query = routing.params['query'].to_s.strip
         normalized_query = query.downcase
         begin
-          images = ListImages.new(FaceCloak::App.config).call
+          images = ListImages.new(FaceCloak::App.config).call(auth_token: @current_account&.auth_token)
           unless normalized_query.empty?
             images = images.select do |image|
               [
@@ -56,10 +55,10 @@ module FaceCloak
     private
 
     def current_account_from_session
-      @secure_session.get(:current_account)
+      CurrentSession.new(session).current_account
     rescue StandardError => e
       App.logger.warn "SESSION READ FAILED: #{e.inspect}"
-      @secure_session.delete(:current_account)
+      CurrentSession.new(session).delete
       nil
     end
 

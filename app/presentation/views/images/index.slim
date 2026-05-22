@@ -23,7 +23,7 @@ div class="d-flex flex-column"
               h2 class="display-lg mb-3" Image ##{img['id'][0..7]}
               p class="lead mb-4" 
                 | Uploaded by 
-                a href="/account/#{img['owner_username']}" class="text-dark fw-bold text-decoration-none" = img['owner_username'] || "User ##{img['owner_id']}"
+                a href="/account/#{img['owner_username']}" class="text-dark fw-bold text-decoration-none" = FaceCloak::Account.handle_for(img['owner_username'] || img['owner_id'])
               
               div class="d-flex gap-3"
                 a href="/images/#{img['id']}" class="btn btn-primary" View Image

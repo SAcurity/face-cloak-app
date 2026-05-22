@@ -1,22 +1,38 @@
 div class="auth-page row justify-content-center"
   div class="col-12 col-md-6 col-lg-4"
     div class="text-center mb-5"
-      h1 class="display-md" Sign in to FaceCloak
-      p class="lead-airy" Enter your details below.
+      h1 class="display-md" Welcome Back!
 
     div class="store-utility-card"
-      form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8"
+      - errors = defined?(field_errors) ? field_errors : {}
+      - username_error = errors[:username]
+      - password_error = errors[:password]
+      - username_has_error = errors.key?(:username)
+      - password_has_error = errors.key?(:password)
+
+      form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
         div class="form-group mb-4"
           label for='input-username' class="caption-strong mb-2 d-block" Username
-          input type='text' name='username' id='input-username' class="search-input w-100 ps-3" required="required" placeholder="Username"
+          input type='text' name='username' id='input-username' class="search-input w-100 ps-3 #{username_has_error ? 'auth-input-error' : ''}" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-invalid=(username_has_error ? 'true' : 'false') aria-describedby=(username_error && !username_error.empty? ? 'username-error' : nil)
+          - if username_error && !username_error.empty?
+            div id="username-error" class="auth-field-message mt-2"
+              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+              span = username_error
         
         div class="form-group mb-5"
           label for='input-password' class="caption-strong mb-2 d-block" Password
-          input type='password' name='password' id='input-password' class="search-input w-100 ps-3" required="required" placeholder="Password"
+          div class="password-field"
+            input type='password' name='password' id='input-password' class="search-input w-100 ps-3 #{password_has_error ? 'auth-input-error' : ''}" placeholder="Password" autocomplete="current-password" aria-invalid=(password_has_error ? 'true' : 'false') aria-describedby=(password_error && !password_error.empty? ? 'password-error' : nil)
+            button type='button' class="password-toggle" data-toggle-password="#input-password" aria-controls="input-password" aria-label="Show password"
+              i class="fas fa-eye-slash" aria-hidden="true"
+          - if password_error && !password_error.empty?
+            div id="password-error" class="auth-field-message mt-2"
+              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+              span = password_error
 
         div class="text-center mt-5"
-          button type='submit' id='button-login' value='login' class="btn btn-primary btn-large px-5" Sign In
-    
+          button type='submit' id='button-login' value='login' class="btn btn-primary btn-large w-100" Sign In
+
     div class="text-center mt-5"
       p class="caption text-muted" 
         | Don't have an account? 

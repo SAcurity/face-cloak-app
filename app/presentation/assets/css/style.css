@@ -70,7 +70,7 @@ body {
 
 .auth-page {
   min-height: 100%;
-  padding-top: clamp(1.5rem, 4vh, 3rem);
+  padding-top: clamp(4.5rem, 12vh, 8rem);
   padding-bottom: 1rem;
 }
 
@@ -82,8 +82,24 @@ body {
   margin-bottom: 0;
 }
 
+/* Remove any inner shadows or background textures inside the card/input group */
+.store-utility-card,
+.input-group,
+.input-group .search-input,
+.input-group .input-group-text {
+  box-shadow: none !important;
+  background-image: none !important;
+  background-repeat: none !important;
+  background-size: auto !important;
+}
+.input-group .search-input,
+.input-group .input-group-text {
+  background-color: var(--color-canvas) !important;
+}
+
 .auth-page .store-utility-card {
   padding: clamp(1.25rem, 2.5vh, 2rem);
+  transition: none !important;
 }
 
 .auth-page .form-group.mb-4 {
@@ -96,6 +112,370 @@ body {
 
 .auth-page .text-center.mt-5 {
   margin-top: 1.4rem !important;
+}
+
+.auth-page .btn-primary.btn-large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 20px;
+  font-size: 17px;
+  line-height: 1;
+  vertical-align: top;
+}
+
+.auth-page-compact {
+  padding-top: clamp(4rem, 10vh, 6rem);
+  padding-bottom: 0.75rem;
+}
+
+.auth-page-compact .auth-page-heading {
+  margin-bottom: 0.75rem !important;
+}
+
+.auth-page-compact .display-md {
+  font-size: 30px;
+  line-height: 1.24;
+  margin-bottom: 0;
+}
+
+.auth-page-compact .store-utility-card {
+  padding: clamp(1rem, 2vh, 1.4rem);
+}
+
+.auth-page-compact .form-group.mb-4 {
+  margin-bottom: 0.72rem !important;
+}
+
+.auth-page-compact .text-center.mt-5 {
+  margin-top: 0.9rem !important;
+}
+
+.auth-page-compact .caption-strong {
+  margin-bottom: 0.35rem !important;
+}
+
+.auth-page-compact .auth-field-message {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.verified-email-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: #6e6e73;
+  background-color: var(--color-canvas-parchment);
+  border: 1px solid #d2d2d7;
+  border-radius: 9999px;
+  font-size: 17px;
+}
+
+.verified-email-field i {
+  flex: 0 0 auto;
+  color: var(--color-ink);
+  font-size: 14px;
+}
+
+.verified-email-field span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verified-email-hint {
+  margin-top: 0.35rem;
+  color: #6e6e73;
+}
+
+.auth-field-message {
+  display: flex;
+  align-items: center;
+  color: #ff2d55;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.224px;
+}
+
+.username-availability-message {
+  display: flex;
+  align-items: center;
+  min-height: 1.25rem;
+  color: #6e6e73;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.username-availability-message.is-available {
+  color: #1d8f45;
+}
+
+.username-availability-message.is-taken,
+.username-availability-message.is-error {
+  color: #ff2d55;
+}
+
+.username-availability-message:empty {
+  display: none;
+}
+
+/* Inline username spinner */
+.username-spinner {
+  position: absolute;
+  right: 48px; /* sits left of the clear button */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-top-color: rgba(0,0,0,0.35);
+  animation: spin 0.9s linear infinite;
+  display: none;
+}
+.username-spinner.visible { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Global loading overlay */
+#global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8,10,12,0.28);
+  z-index: 3000;
+}
+#global-loading-overlay.visible { display: flex; }
+#global-loading-overlay .loader {
+  background: rgba(255,255,255,0.04);
+  padding: 18px 22px;
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  color: #fff;
+}
+#global-loading-overlay .loader .spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.16);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Clear button inside input-group */
+.input-group { position: relative; overflow: visible; display: flex; align-items: stretch; flex-wrap: nowrap; gap: 0; }
+
+/* ensure children don't introduce extra margins that push layout */
+.input-group > * { margin: 0; box-sizing: border-box; }
+
+/* Make the username input pill-shaped and keep the left prefix rounded */
+.input-group .input-group-text {
+  border-radius: 9999px 0 0 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  line-height: 1;
+  padding: 0 12px;
+  border: 1px solid #d2d2d7;
+  border-right: 0; /* avoid double border between prefix and input */
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+.input-group .search-input {
+  /* more right padding so the clear button doesn't overlap the rounded corner */
+  padding-right: 64px;
+  border-radius: 0 9999px 9999px 0;
+  flex: 1 1 auto;
+  flex-basis: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-left: 0; /* avoid double border */
+  height: 44px;
+  margin: 0;
+  display: block;
+}
+/* Clear button inside input-group */
+.input-group {
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  /* use a container border so we can show a single continuous outline */
+  border: 1px solid #d2d2d7;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+/* ensure children don't introduce extra margins that push layout */
+.input-group > * { margin: 0; box-sizing: border-box; }
+
+/* Prefix (left) has a different background so it stands out */
+.input-group .input-group-text {
+  border: none;
+  background-color: var(--color-canvas-parchment);
+  border-radius: 9999px 0 0 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  line-height: 1;
+  padding: 0 12px;
+  flex: 0 0 auto;
+}
+
+/* Input fills remaining space, no internal border (container provides outline) */
+.input-group .search-input {
+  padding-right: 64px;
+  border: none;
+  background-color: var(--color-canvas);
+  border-radius: 0 9999px 9999px 0;
+  flex: 1 1 auto;
+  flex-basis: 0;
+  width: 100%;
+  box-sizing: border-box;
+  height: 44px;
+  margin: 0;
+  display: block;
+}
+
+/* Focus state: show a single outline around the whole group */
+.input-group:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(0,102,204,0.08);
+}
+
+/* keep clear button clickable above everything */
+.input-clear { z-index: 3; }
+
+/* Error / taken state for username - change the whole group's border to red */
+.input-group.is-taken { border-color: #ff2d55 !important; }
+.input-group.is-taken:focus-within { box-shadow: 0 0 0 4px rgba(255,45,85,0.12) !important; }
+
+/* Available state for username - green border */
+.input-group.is-available { border-color: #1d8f45 !important; }
+.input-group.is-available:focus-within { box-shadow: 0 0 0 4px rgba(29,143,69,0.10) !important; }
+
+/* When focused, keep the prefix and input backgrounds as-is but ensure readable contrast */
+.input-group:focus-within .input-group-text {
+  background-color: var(--color-canvas-parchment);
+}
+.input-group .input-group-text { background-color: var(--color-canvas-parchment) !important; }
+.input-clear {
+  position: absolute;
+  /* move left a bit so it doesn't cover the input's outer rounded corner */
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #6e6e73;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.input-clear:focus { outline: 2px solid rgba(0,0,0,0.06); border-radius: 6px; }
+.input-clear.hidden { display: none; }
+
+/* Ensure input-group prefix and the input itself keep pill corners (higher specificity) */
+.input-group > .input-group-text {
+  border-radius: 9999px 0 0 9999px !important;
+}
+.input-group > .search-input {
+  border-radius: 0 9999px 9999px 0 !important;
+  padding-right: 64px !important;
+}
+.auth-input-error,
+.auth-input-error:focus {
+  border-color: #ff2d55 !important;
+  box-shadow: none !important;
+}
+
+.auth-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  color: var(--color-ink);
+  background-color: var(--color-canvas-parchment);
+  border: 1px solid #d2d2d7;
+  border-radius: 999px;
+  font-size: 24px;
+}
+
+.auth-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 20px;
+  line-height: 1;
+}
+
+.auth-secondary-action:hover,
+.auth-secondary-action:focus,
+.auth-secondary-action:active {
+  color: var(--color-ink) !important;
+  background-color: #e5e5ea !important;
+  border-color: var(--color-ink) !important;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .search-input {
+  padding-right: 54px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #6e6e73;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+
+.password-toggle:hover,
+.password-toggle:focus,
+.password-toggle:active {
+  color: var(--color-ink);
+  background-color: rgba(0, 0, 0, 0.04);
+  transform: translateY(-50%);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid rgba(0, 102, 204, 0.28);
+  outline-offset: 2px;
 }
 
 h1, h2, h3, .navbar-brand {
@@ -189,12 +569,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   border-radius: 18px;
   padding: 24px;
   border: 1px solid #e0e0e0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.store-utility-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  transition: none;
 }
 
 .rounded-md { border-radius: 11px; }
@@ -315,24 +690,82 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   font-size: 0.8rem;
 }
 
+.nav-auth-link,
+.nav-auth-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 999px;
+  transform: none;
+  box-shadow: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.nav-auth-link {
+  padding: 6px 0;
+  border: 1px solid transparent;
+}
+
+.nav-auth-link:hover,
+.nav-auth-link:focus,
+.nav-auth-link:active {
+  color: rgba(255,255,255,0.78);
+  transform: none;
+  box-shadow: none;
+}
+
+.nav-auth-login {
+  padding: 6px 15px;
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-canvas);
+}
+
+.nav-auth-login:hover,
+.nav-auth-login:focus,
+.nav-auth-login:active {
+  color: var(--color-ink);
+  background-color: #d2d2d7;
+  border-color: #d2d2d7;
+  transform: none;
+  box-shadow: none;
+}
+
 /* BUTTONS */
 .btn-primary {
   background-color: var(--color-primary);
   color: #fff;
   border-radius: 9999px;
-  padding: 12px 24px;
+  padding: 11px 22px;
   font-size: 17px;
   font-weight: 400;
-  border: none;
-  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  transform: none;
 }
 
 .btn-primary.btn-large {
-  padding: 14px 32px;
-  font-size: 19px;
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: 300;
 }
 
-.btn-primary:active { transform: scale(0.95); }
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--color-primary-focus) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
 
 .btn-secondary-pill {
   background-color: var(--color-canvas);
@@ -342,12 +775,19 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   padding: 11px 22px;
   font-size: 17px;
   font-weight: 400;
-  transition: all 0.2s ease;
+  box-shadow: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  transform: none;
 }
 
-.btn-secondary-pill:hover {
-  background-color: var(--color-canvas-parchment);
-  color: var(--color-primary-focus);
+.btn-secondary-pill:hover,
+.btn-secondary-pill:focus,
+.btn-secondary-pill:active {
+  background-color: var(--color-canvas-parchment) !important;
+  color: var(--color-primary-focus) !important;
+  border-color: var(--color-primary-focus) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* SEGMENTED CONTROL */
@@ -366,7 +806,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   color: #8e8e93;
   text-decoration: none;
   border-radius: 999px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.16s ease, color 0.16s ease;
   border: none;
   background: transparent;
   display: flex;
@@ -376,58 +816,18 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 
 /* Active state for segmented control buttons */
 .btn-filter.active {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  background: var(--color-canvas);
   color: var(--color-ink);
-  box-shadow: 0 6px 18px rgba(2,6,23,0.06) inset, 0 4px 10px rgba(0,0,0,0.06);
-  transform: translateY(-1px) scale(1.01);
+  box-shadow: none;
 }
 
-/* Subtle press animation visible on click/tap */
+.btn-filter:hover,
+.btn-filter:focus,
 .btn-filter:active {
-  transform: scale(0.98);
-  transition: transform 120ms ease-out;
-}
-
-/* Ripple-like flash on click using pseudo-element (very short-lived) */
-.btn-filter {
-  position: relative;
-  overflow: hidden;
-}
-.btn-filter::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  pointer-events: none;
-}
-.btn-filter:active::after {
-  animation: flashClick 420ms ease-out;
-}
-@keyframes flashClick {
-  0% { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
-  40% { transform: translate(-50%, -50%) scale(8); opacity: 0.18; }
-  100% { transform: translate(-50%, -50%) scale(12); opacity: 0; }
-}
-
-.btn-filter.active {
-  background-color: #fff;
   color: var(--color-ink);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  view-transition-name: active-filter-pill;
-}
-
-.btn-filter:hover:not(.active) {
-  color: var(--color-ink);
-}
-
-.btn-filter:active {
-  transform: scale(0.98);
+  background-color: rgba(255,255,255,0.48);
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-back-capsule {
@@ -438,14 +838,18 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   padding: 8px 16px;
   border-radius: 10px;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
   border: 1px solid #e5e5ea;
+  transform: none;
 }
 
-.btn-back-capsule:hover {
+.btn-back-capsule:hover,
+.btn-back-capsule:focus,
+.btn-back-capsule:active {
   background-color: #e5e5ea;
   color: var(--color-ink);
-  transform: translateX(-2px);
+  box-shadow: none;
+  transform: none;
 }
 
 /* VIEW TRANSITIONS CUSTOMIZATION */
@@ -521,7 +925,40 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   border-radius: 18px;
   padding: 24px;
   border: 1px solid #e0e0e0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: none;
+}
+
+.auth-page .store-utility-card,
+.auth-page .store-utility-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+#button-login,
+#button-login:hover,
+#button-login:focus,
+#button-login:active,
+#button-register,
+#button-register:hover,
+#button-register:focus,
+#button-register:active,
+#button-register-confirm,
+#button-register-confirm:hover,
+#button-register-confirm:focus,
+#button-register-confirm:active {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  translate: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* AVATAR */

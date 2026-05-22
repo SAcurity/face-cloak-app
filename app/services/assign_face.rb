@@ -7,11 +7,11 @@ module FaceCloak
       @client = ApiClient.new(config)
     end
 
-    def call(face_id:, assigned_user_id:, current_account_id:)
-      @client.authenticated_post(
+    def call(face_id:, assigned_username:, auth_token:)
+      @client.post(
         "/face_records/#{face_id}/assignment",
-        { assigned_user_id: assigned_user_id },
-        current_account_id: current_account_id
+        { assigned_username: Account.normalize_username(assigned_username) },
+        auth_token: auth_token
       )
     end
   end

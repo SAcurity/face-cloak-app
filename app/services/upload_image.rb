@@ -7,13 +7,11 @@ module FaceCloak
       @config = config
     end
 
-    def call(current_account_id:, file_path:, file_name:)
+    def call(auth_token:, file_path:, file_name:)
       url = "#{@config.API_URL}/images"
 
-      # Prepare multipart request
-      response = HTTP.headers('X-Actor-Id' => current_account_id.to_s)
+      response = HTTP.auth("Bearer #{auth_token}")
                      .post(url, form: {
-                             owner_id: current_account_id,
                              file: HTTP::FormData::File.new(file_path, filename: file_name)
                            })
 
