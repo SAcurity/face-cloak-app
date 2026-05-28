@@ -12,7 +12,7 @@ module FaceCloak
       auth_token = @secure_session.get(:auth_token)
       return nil unless account_info && auth_token
 
-      Account.new(account_info, auth_token)
+      Account.from_api(account_info, auth_token)
     end
 
     def current_account=(account)

@@ -93,9 +93,9 @@ module FaceCloak
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def route_post_registration(routing)
-      registration_input = Form::Registration.new.call(routing.params)
+      registration_input = FaceCloak::Form::Registration.new.call(routing.params)
       if registration_input.failure?
-        flash.now[:error] = Form.validation_errors(registration_input)
+        flash.now[:error] = FaceCloak::Form.validation_errors(registration_input)
         response.status = 400
         return view(:register)
       end
@@ -145,9 +145,9 @@ module FaceCloak
         end
 
         routing.post do
-          login_input = Form::LoginCredentials.new.call(routing.params)
+          login_input = FaceCloak::Form::LoginCredentials.new.call(routing.params)
           if login_input.failure?
-            flash.now[:error] = Form.validation_errors(login_input)
+            flash.now[:error] = FaceCloak::Form.validation_errors(login_input)
             response.status = 400
             next view(:login)
           end

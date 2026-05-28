@@ -6,7 +6,7 @@ require_relative 'form_base'
 module FaceCloak
   module Form
     # Login: username + password presence only.
-    LoginCredentials = Dry::Validation.Contract do
+    class LoginCredentials < Dry::Validation::Contract
       params do
         required(:username).filled(:string)
         required(:password).filled(:string)
@@ -14,7 +14,7 @@ module FaceCloak
     end
 
     # Registration: email only (Step 1)
-    Registration = Dry::Validation.Contract do
+    class Registration < Dry::Validation::Contract
       params do
         required(:email).filled(:string)
       end
@@ -25,7 +25,7 @@ module FaceCloak
     end
 
     # AccountCompletion: username + password + password_confirm (Step 2)
-    AccountCompletion = Dry::Validation.Contract do
+    class AccountCompletion < Dry::Validation::Contract
       params do
         required(:username).filled(:string, min_size?: 4)
         required(:password).filled(:string)

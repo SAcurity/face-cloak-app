@@ -46,9 +46,9 @@ module FaceCloak
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def route_assign_face(routing, image_id, face_id, auth_token)
-      assignment_input = Form::FaceAssignment.new.call(routing.params)
+      assignment_input = FaceCloak::Form::FaceAssignment.new.call(routing.params)
       if assignment_input.failure?
-        flash[:error] = Form.validation_errors(assignment_input).values.join(', ')
+        flash[:error] = FaceCloak::Form.validation_errors(assignment_input).values.join(', ')
         return routing.redirect "/images/#{image_id}/raw"
       end
 

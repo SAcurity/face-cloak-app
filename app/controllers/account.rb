@@ -36,10 +36,10 @@ module FaceCloak
           params = routing.params.dup
           params['username'] = Account.normalize_username(params['username'])
 
-          completion_input = Form::AccountCompletion.new.call(params)
+          completion_input = FaceCloak::Form::AccountCompletion.new.call(params)
 
           if completion_input.failure?
-            flash.now[:error] = Form.validation_errors(completion_input)
+            flash.now[:error] = FaceCloak::Form.validation_errors(completion_input)
             response.status = 400
             next view(:register_confirm,
                       locals: {
@@ -97,8 +97,8 @@ module FaceCloak
 
     private
 
-    def image_owned_by_current?(image, account)
-      image['attributes']['owner']['id'].to_s == account.id.to_s
+    def some_other_private_method_if_needed
+      # This space intentionally left for future private methods
     end
   end
 end
