@@ -26,7 +26,8 @@ html
     - current_path = @routing.path.to_s
     - scrollable_content = current_path == '/' || current_path.start_with?('/images', '/account')
     - auth_standalone_path = ['/auth/login', '/auth/register', '/auth/email_verification'].include?(current_path) || current_path.start_with?('/auth/register/')
-    - show_back_button = current_path != '/' && !auth_standalone_path
+    - account_profile_path = current_path.start_with?('/account/') && current_path != '/account/usernames'
+    - show_back_button = current_path != '/' && !auth_standalone_path && !account_profile_path
     / Main Nav (Frosted Black)
     nav class="sub-nav"
       div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
@@ -48,6 +49,8 @@ html
               | Upload
             a href="/account/#{@current_account.username}" class="text-decoration-none"
               == avatar_for(@current_account.username, size: 32)
+            a href="/auth/logout" class="nav-icon-button ms-2" title="Log out" aria-label="Log out"
+              i class="fas fa-right-from-bracket" aria-hidden="true"
           - else
             a class="nav-auth-link me-3" href="/auth/register" Register
             a class="nav-auth-login" href="/auth/login" Login
@@ -56,7 +59,7 @@ html
       div class='container-fluid p-0' id='html_body'
         - if show_back_button
           div class="container pt-4 pb-0 text-start"
-            a href="/" class="btn-back-capsule" data-history-back="true"
+            a href="/" class="btn-back-capsule" data-page-back="true"
               i class="fas fa-chevron-left me-2" style="font-size: 0.8em;"
               span class="caption-strong text-uppercase" Back
 

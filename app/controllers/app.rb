@@ -9,6 +9,9 @@ module FaceCloak
   # Base class for the FaceCloak Web App
   class App < Roda
     include AvatarHelper
+    include FaceAssignmentHelper
+    include ImageDetailHelper
+    include ImageRouteHelper
     include NavigationHelper
 
     use Rack::MethodOverride
@@ -34,16 +37,19 @@ module FaceCloak
         query = routing.params['query'].to_s.strip
         normalized_query = query.downcase
         begin
-          images = ListImages.new(FaceCloak::App.config).call(auth_token: @current_account&.auth_token)
+          list_images = ListImages.new(FaceCloak::App.config)
+          images = list_images.call(auth_token: @current_account&.auth_token)
           unless normalized_query.empty?
             images = images.select do |image|
               [
                 image['id'],
                 image['file_name'],
-                image['owner_id']
+                image['owner_id'],
+                image_owner_username(image)
               ].compact.any? { |value| value.to_s.downcase.include?(normalized_query) }
             end
           end
+          images = images_with_upload_logs(images, @current_account&.auth_token)
         rescue StandardError => e
           puts "HOME PAGE ERROR: #{e.inspect}"
           images = []
@@ -67,6 +73,16 @@ module FaceCloak
 
       flash[:error] = 'Please log in to continue'
       routing.redirect '/auth/login'
+    end
+
+    def images_with_upload_logs(images, auth_token)
+      return images unless auth_token
+
+      images.map do |image|
+        next image unless image_upload_time_label(image) == '-'
+
+        image.merge('_logs' => image_logs(image['id'], auth_token))
+      end
     end
   end
 end

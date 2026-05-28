@@ -14,6 +14,10 @@ div class="d-flex flex-column"
 
   - images.each_with_index do |img, index|
     - bg_class = index.even? ? 'tile-white' : 'tile-parchment'
+    - owner_is_current = image_owned_by_current?(img, @current_account)
+    - owner_username = img['owner_username'].to_s.strip
+    - owner_username = @current_account.username.to_s.strip if owner_username.empty? && owner_is_current
+    - owner_handle = image_owner_handle(img, current_account: @current_account, is_owner: owner_is_current)
     div class="product-tile #{bg_class}" style="padding: 100px 0;"
       div class="container"
         div class="row align-items-center"
@@ -23,7 +27,10 @@ div class="d-flex flex-column"
               h2 class="display-lg mb-3" Image ##{img['id'][0..7]}
               p class="lead mb-4" 
                 | Uploaded by 
-                a href="/account/#{img['owner_username']}" class="text-dark fw-bold text-decoration-none" = FaceCloak::Account.handle_for(img['owner_username'] || img['owner_id'])
+                - if owner_username.empty?
+                  span class="text-dark fw-bold" = owner_handle
+                - else
+                  a href="/account/#{owner_username}" class="text-dark fw-bold text-decoration-none" = owner_handle
               
               div class="d-flex gap-3"
                 a href="/images/#{img['id']}" class="btn btn-primary" View Image

@@ -39,7 +39,7 @@ module FaceCloak
     end
 
     def self.normalize_username(value)
-      value.to_s.strip.sub(/\A@+/, '')
+      value.to_s.strip.sub(/\A@+/, '').strip
     end
 
     def self.handle_for(value)

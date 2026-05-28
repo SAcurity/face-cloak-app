@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'roda'
 require_relative 'app'
 
@@ -7,6 +8,25 @@ module FaceCloak
   # Web controller for the FaceCloak Web App
   class App < Roda
     route('account') do |routing|
+      routing.is 'usernames' do
+        require_login!(routing)
+
+        routing.get do
+          response['Content-Type'] = 'application/json'
+          accounts = ListAccounts.new(App.config).call(auth_token: @current_account.auth_token)
+          current_account_id = @current_account.id.to_s
+          visible_accounts = accounts.reject { |account| account['id'].to_s == current_account_id }
+          {
+            accounts: visible_accounts.map do |account|
+              { id: account['id'], username: account['username'], handle: Account.handle_for(account['username']) }
+            end
+          }.to_json
+        rescue StandardError => e
+          App.logger.warn "USERNAME LIST FAILED: #{e.inspect}"
+          { accounts: [] }.to_json
+        end
+      end
+
       routing.on String do |username_or_token|
         # POST /account/[registration_token]
         routing.post do
@@ -46,6 +66,7 @@ module FaceCloak
         routing.get do
           if username == @current_account.username
             images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
+            images = images.select { |image| image_owned_by_current?(image, @current_account) }
             view 'account/show', locals: { username: @current_account.handle, images: images }
           else
             flash[:error] = 'Profile view for other users not implemented yet'

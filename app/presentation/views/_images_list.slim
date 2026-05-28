@@ -1,20 +1,21 @@
 - if images && images.any?
-  div class="container pt-4 pb-5"
-    div class="row g-4"
+  div class="container home-feed-container"
+    div class="home-feed-grid"
       - images.each do |image|
-        div class="col-12 col-md-6 col-lg-4"
-          div class="store-utility-card h-100 d-flex flex-column"
-            div class="mb-3 overflow-hidden rounded-md image-card-frame"
-              a href="/images/#{image['id']}" class="d-block h-100"
-                img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="img-fluid w-100 h-100 object-fit-cover lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
-            div class="mt-auto"
-              p class="body-strong mb-1" = image['file_name'] || "Image ##{image['id'][0..7]}"
-              p class="caption text-muted mb-3" 
-                | Owner: 
-                span class="text-primary" = FaceCloak::Account.handle_for(image['owner_username'] || image['owner_id'])
-              a href="/images/#{image['id']}" class="text-link text-decoration-none" 
-                | View Details 
-                i class="fas fa-chevron-right ms-1 small"
+        - owner_is_current = image_owned_by_current?(image, @current_account)
+        - owner_handle = image_owner_handle(image, current_account: @current_account, is_owner: owner_is_current)
+        - owner_username = FaceCloak::Account.normalize_username(owner_handle)
+        article class="feed-card"
+          div class="feed-card-meta"
+            == avatar_for(owner_handle, size: 40)
+            div class="feed-card-meta-text"
+              - if owner_username.empty? || owner_handle == 'Unknown username'
+                div class="feed-card-username" = owner_handle
+              - else
+                a href="/account/#{owner_username}" class="feed-card-username" = owner_handle
+              div class="feed-card-time" = image_upload_time_label(image, logs: image['_logs'] || [])
+          a href="/images/#{image['id']}" class="feed-card-image-link"
+            img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="feed-card-image lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
 - else
   div class="container py-5 text-center"
     div class="product-tile tile-white rounded-lg border"
