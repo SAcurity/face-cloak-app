@@ -25,7 +25,9 @@ html
   body class="d-flex flex-column"
     - current_path = @routing.path.to_s
     - scrollable_content = current_path == '/' || current_path.start_with?('/images', '/account')
-    - show_back_button = current_path != '/' && !['/auth/login', '/auth/register'].include?(current_path)
+    - auth_standalone_path = ['/auth/login', '/auth/register', '/auth/email_verification'].include?(current_path) || current_path.start_with?('/auth/register/')
+    - account_profile_path = current_path.start_with?('/account/') && current_path != '/account/usernames'
+    - show_back_button = current_path != '/' && !auth_standalone_path && !account_profile_path
     / Main Nav (Frosted Black)
     nav class="sub-nav"
       div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
@@ -45,17 +47,19 @@ html
             a href="/images/new" class="btn btn-primary btn-sm me-3 d-inline-flex align-items-center gap-2" style="border-radius: 999px; padding: 5px 15px;"
               i class="fas fa-plus" aria-hidden="true"
               | Upload
-            a href="/account/#{@current_account['username']}" class="text-decoration-none"
-              == avatar_for(@current_account['username'], size: 32)
+            a href="/account/#{@current_account.username}" class="text-decoration-none"
+              == avatar_for(@current_account.username, size: 32)
+            a href="/auth/logout" class="nav-icon-button ms-2" title="Log out" aria-label="Log out"
+              i class="fas fa-right-from-bracket" aria-hidden="true"
           - else
-            a class="nav-link text-white me-3 text-decoration-none body-strong" href="/auth/register" Register
-            a class="nav-link text-white me-3 text-decoration-none body-strong" href="/auth/login" Login
+            a class="nav-auth-link me-3" href="/auth/register" Register
+            a class="nav-auth-login" href="/auth/login" Login
 
     main id="main-content" class=(scrollable_content ? 'is-scrollable' : 'is-contained')
       div class='container-fluid p-0' id='html_body'
         - if show_back_button
           div class="container pt-4 pb-0 text-start"
-            a href="/" class="btn-back-capsule" data-history-back="true"
+            a href="/" class="btn-back-capsule" data-page-back="true"
               i class="fas fa-chevron-left me-2" style="font-size: 0.8em;"
               span class="caption-strong text-uppercase" Back
 
@@ -70,6 +74,12 @@ html
           | FaceCloak is made for privacy demonstration purposes.
           span class="footer-divider"  &middot; 
           | &copy; 2026 FaceCloak. All rights reserved.
+
+    / Global loading overlay
+    #global-loading-overlay
+      .loader
+        .spinner
+        span.text Creating account...
 
     / Scripts
     script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"

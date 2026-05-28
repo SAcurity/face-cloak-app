@@ -8,7 +8,7 @@ module FaceCloak
   class App < Roda
     route('images') do |routing|
       require_login!(routing)
-      current_account_id = @current_account['id']
+      auth_token = @current_account.auth_token
 
       # GET /images/new
       routing.is 'new' do
@@ -16,16 +16,15 @@ module FaceCloak
       end
 
       routing.on String do |image_id|
-        # GET /images/[image_id]/raw_image
-        routing.on 'raw_image' do
-          routing.get do
-            api_res = HTTP.headers('X-Actor-Id' => current_account_id.to_s)
-                          .get("#{FaceCloak::App.config.API_URL}/images/#{image_id}/raw")
-
-            routing.halt(api_res.code, api_res.body.to_s) unless api_res.code == 200
-
-            response['Content-Type'] = api_res.headers['Content-Type']
-            api_res.body.to_s
+        %w[protected raw].each do |variant|
+          routing.on variant do
+            routing.get do
+              if image_asset_request?
+                image_variant_response(routing, image_id, variant, auth_token)
+              else
+                image_detail_response(routing, image_id, variant, auth_token)
+              end
+            end
           end
         end
 
@@ -34,7 +33,7 @@ module FaceCloak
           routing.get do
             logs = GetImageLogs.new(FaceCloak::App.config).call(
               image_id: image_id,
-              current_account_id: current_account_id
+              auth_token: auth_token
             )
             view 'images/logs', locals: { image_id: image_id, logs: logs }
           rescue StandardError => e
@@ -45,40 +44,59 @@ module FaceCloak
 
         # POST /images/[image_id]/faces/[face_id]
         routing.on 'faces', String do |face_id|
+          routing.on 'respond' do
+            routing.post do
+              return_view = safe_image_return_view(routing.params)
+              RespondFaceAssignment.new(FaceCloak::App.config).call(
+                face_id: face_id, cloak_type: routing.params['cloak_type'], auth_token: auth_token
+              )
+              flash[:notice] = 'Masking preference saved'
+              routing.redirect "/images/#{image_id}/#{return_view}"
+            rescue StandardError => e
+              flash[:error] = "Could not save masking preference: #{e.message}"
+              return_view = safe_image_return_view(routing.params)
+              routing.redirect "/images/#{image_id}/#{return_view}"
+            end
+          end
+
+          routing.on 'decline' do
+            routing.post do
+              return_view = safe_image_return_view(routing.params)
+              DeclineFaceAssignment.new(FaceCloak::App.config).call(face_id: face_id, auth_token: auth_token)
+              flash[:notice] = 'Assignment declined'
+              routing.redirect "/images/#{image_id}/#{return_view}"
+            rescue StandardError => e
+              flash[:error] = "Could not decline assignment: #{e.message}"
+              return_view = safe_image_return_view(routing.params)
+              routing.redirect "/images/#{image_id}/#{return_view}"
+            end
+          end
+
           routing.post do
+            assigned_user_id = routing.params['assigned_user_id'].to_s.strip
+            assigning_self = routing.params['assign_self'].to_s == 'true'
+            if assigned_user_id == @current_account.id.to_s && !assigning_self
+              flash[:error] = 'Use [Myself] button to assign your own face'
+              routing.redirect "/images/#{image_id}/raw"
+            end
+
             AssignFace.new(FaceCloak::App.config).call(
-              face_id: face_id,
-              assigned_user_id: routing.params['assigned_user_id'],
-              current_account_id: current_account_id
+              face_id: face_id, assigned_user_id: assigned_user_id, auth_token: auth_token
             )
             flash[:notice] = 'Face assigned successfully'
-            routing.redirect "/images/#{image_id}?view=raw"
+            routing.redirect "/images/#{image_id}/raw"
           rescue StandardError => e
             flash[:error] = "Could not assign face: #{e.message}"
-            routing.redirect "/images/#{image_id}?view=raw"
+            routing.redirect "/images/#{image_id}/raw"
           end
         end
 
         # GET /images/[image_id]
         routing.is do
           routing.get do
-            image_data = GetImage.new(FaceCloak::App.config).call(
-              image_id,
-              current_account_id: current_account_id
-            )
-            unless image_data
-              response.status = 404
-              next "Image #{image_id} not found in API"
-            end
-
-            is_owner = image_data['owner_id'].to_i == current_account_id.to_i
-            view_type = routing.params['view'] || 'protected'
-
-            view 'images/show', locals: {
-              image: image_data,
-              is_owner: is_owner,
-              view_type: view_type
-            }
+            requested_view = routing.params['view'].to_s
+            requested_view = nil unless %w[protected raw].include?(requested_view)
+            image_detail_redirect(routing, image_id, requested_view, auth_token)
           end
         end
       end
@@ -92,7 +110,7 @@ module FaceCloak
       routing.post do
         image_file = routing.params['file']
         UploadImage.new(FaceCloak::App.config).call(
-          current_account_id: current_account_id,
+          auth_token: auth_token,
           file_path: image_file[:tempfile].path,
           file_name: image_file[:filename]
         )

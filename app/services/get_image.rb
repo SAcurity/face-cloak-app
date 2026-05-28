@@ -8,25 +8,32 @@ module FaceCloak
       @list_images = ListImages.new(config)
     end
 
-    def call(image_id, current_account_id: nil)
-      image = @list_images.call(current_account_id: current_account_id)
-                          .find { |img| img['id'] == image_id }
+    def call(image_id, auth_token: nil)
+      image = find_image(image_id, auth_token)
       return nil unless image
 
-      image.merge('faces' => fetch_faces(image_id, current_account_id: current_account_id))
+      image.merge('faces' => fetch_faces(image_id, auth_token: auth_token))
     rescue StandardError
       nil
     end
 
     private
 
-    def fetch_faces(image_id, current_account_id:)
-      response = if current_account_id
-                   @client.authenticated_get("/images/#{image_id}/face_records",
-                                             current_account_id: current_account_id)
-                 else
-                   @client.get("/images/#{image_id}/face_records")
-                 end
+    def find_image(image_id, auth_token)
+      public_image = find_in_list(image_id, auth_token: nil)
+      return public_image if public_image
+
+      find_in_list(image_id, auth_token: auth_token)
+    end
+
+    def find_in_list(image_id, auth_token:)
+      @list_images.call(auth_token: auth_token).find { |img| img['id'].to_s == image_id.to_s }
+    rescue StandardError
+      nil
+    end
+
+    def fetch_faces(image_id, auth_token:)
+      response = @client.get("/images/#{image_id}/face_records", auth_token: auth_token)
 
       response.fetch('data', []).map { |face| face['attributes'] }
     rescue StandardError

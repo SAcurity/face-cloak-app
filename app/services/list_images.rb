@@ -7,21 +7,13 @@ module FaceCloak
       @client = ApiClient.new(config)
     end
 
-    def call(owner_id: nil, current_account_id: nil)
-      response = if current_account_id
-                   @client.authenticated_get('/images', current_account_id: current_account_id)
-                 else
-                   @client.get('/images')
-                 end
+    def call(auth_token: nil)
+      response = @client.get('/images', auth_token: auth_token)
 
-      images = response.fetch('data', []).map do |img|
-        img['attributes']
+      response.fetch('data', []).map do |img|
+        attributes = img['attributes'] || img
+        attributes.merge('id' => attributes['id'] || img['id'])
       end
-
-      return images unless owner_id
-
-      # Filter by owner_id if provided (simple client-side filter for now)
-      images.select { |img| img['owner_id'].to_i == owner_id.to_i }
     end
   end
 end

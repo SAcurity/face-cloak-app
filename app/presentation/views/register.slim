@@ -1,25 +1,24 @@
 div class="auth-page row justify-content-center"
   div class="col-12 col-md-6 col-lg-4"
     div class="text-center mb-5"
-      h1 class="display-md" Create FaceCloak account
-      p class="lead-airy" Enter your account details.
+      h1 class="display-md" Register
 
     div class="store-utility-card"
-      form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8"
+      - auth_error = defined?(field_error) ? field_error : nil
+
+      form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
         div class="form-group mb-4"
           label for='input-email' class="caption-strong mb-2 d-block" Email
-          input type='email' name='email' id='input-email' class="search-input w-100 ps-3" required="required" placeholder="Email"
-
-        div class="form-group mb-4"
-          label for='input-username' class="caption-strong mb-2 d-block" Username
-          input type='text' name='username' id='input-username' class="search-input w-100 ps-3" required="required" placeholder="Username"
-
-        div class="form-group mb-5"
-          label for='input-password' class="caption-strong mb-2 d-block" Password
-          input type='password' name='password' id='input-password' class="search-input w-100 ps-3" required="required" placeholder="Password"
+          input type='email' name='email' id='input-email' class="search-input w-100 ps-3 #{auth_error ? 'auth-input-error' : ''}" placeholder="name@domain.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+          - if auth_error
+            div class="auth-field-message mt-2"
+              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+              span = auth_error
 
         div class="text-center mt-5"
-          button type='submit' id='button-register' value='register' class="btn btn-primary btn-large px-5" Create Account
+          button type='submit' id='button-register' value='register' class="btn btn-primary btn-large w-100"
+            i class="far fa-envelope me-2" aria-hidden="true"
+            | Continue with Email
 
     div class="text-center mt-5"
       p class="caption text-muted"
