@@ -26,11 +26,21 @@ module FaceCloak
     end
 
     def face_assigned_username(face)
-      assigned_user(face)['username'].to_s.strip
+      if face.respond_to?(:assigned_user) && face.assigned_user.is_a?(Hash)
+        face.assigned_user['username'].to_s.strip
+      else
+        assigned_user(face)['username'].to_s.strip
+      end
     end
 
     def face_assigned_user_id(face)
-      face['assigned_user_id'] || assigned_user(face)['id']
+      if face.respond_to?(:assigned_user_id)
+        return face.assigned_user_id if face.assigned_user_id
+
+        face.respond_to?(:assigned_user) && face.assigned_user.is_a?(Hash) ? face.assigned_user['id'] : nil
+      else
+        face['assigned_user_id'] || assigned_user(face)['id']
+      end
     end
 
     def face_declined_handles(face)

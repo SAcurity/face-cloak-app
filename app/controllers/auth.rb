@@ -5,25 +5,6 @@ require 'roda'
 require_relative 'app'
 
 module FaceCloak
-  # Field-level error helpers for auth forms
-  module AuthFieldErrors
-    private
-
-    def login_field_errors(username, password)
-      {}.tap do |errors|
-        errors[:username] = 'Enter your username' if username.empty?
-        errors[:password] = 'Enter your password' if password.empty?
-      end
-    end
-
-    def login_failed_errors
-      {
-        username: '',
-        password: 'Login failed. Check your username and password.'
-      }
-    end
-  end
-
   # Tracks the short-lived register-to-email-verification page flow.
   module RegistrationFlowState
     PENDING_REGISTRATION_EMAIL_KEY = :pending_registration_email
@@ -76,11 +57,83 @@ module FaceCloak
     end
   end
 
+  # Routes for registration flow (email verification, token verification, and initial POST).
+  module AuthRegistrationRoute
+    private
+
+    def route_registration(routing)
+      routing.on 'register' do
+        routing.is String do |registration_token|
+          route_verify_token(registration_token)
+        end
+
+        routing.is do
+          routing.get { route_get_registration }
+          routing.post { route_post_registration(routing) }
+        end
+      end
+    end
+
+    def route_verify_token(registration_token)
+      token = RegistrationToken.load(registration_token)
+      view :register_confirm, locals: {
+        registration_token: registration_token,
+        email: token.email, username: '',
+        username_error: nil, password_error: nil, password_confirm_error: nil
+      }
+    rescue RegistrationToken::InvalidTokenError
+      flash[:error] = 'Verification link is invalid or expired'
+      routing.redirect @register_route
+    end
+
+    def route_get_registration
+      clear_email_verification_pending
+      view :register
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def route_post_registration(routing)
+      registration_input = Form::Registration.new.call(routing.params)
+      if registration_input.failure?
+        flash.now[:error] = Form.validation_errors(registration_input)
+        response.status = 400
+        return view(:register)
+      end
+
+      email = registration_input[:email]
+      VerifyRegistration.new(App.config).call(email: email)
+      mark_email_verification_pending(email)
+      routing.redirect '/auth/email_verification'
+    rescue VerifyRegistration::VerificationError => e
+      response.status = 400
+      flash.now[:error] = { email: e.message }
+      view :register
+    rescue StandardError => e
+      handle_registration_error(e)
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    # rubocop:disable Metrics/AbcSize
+    def handle_registration_error(err)
+      if err.is_a?(VerifyRegistration::ApiServerError)
+        App.logger.warn "API server error: #{err.inspect}"
+        flash[:error] = 'Our servers are not responding -- please try later'
+        response.status = 500
+      else
+        App.logger.warn "REGISTRATION FAILED: #{err.inspect}"
+        response.status = 400
+        flash[:error] = 'Could not start registration'
+      end
+      routing.redirect @register_route
+    end
+    # rubocop:enable Metrics/AbcSize
+  end
+
   # Web controller for the FaceCloak Web App
   class App < Roda
-    include AuthFieldErrors
     include RegistrationFlowState
     include AuthUsernameAvailabilityRoute
+    include AuthRegistrationRoute
 
     route('auth') do |routing|
       @login_route = '/auth/login'
@@ -88,40 +141,44 @@ module FaceCloak
 
       routing.is 'login' do
         routing.get do
-          view :login, locals: { field_errors: {} }
+          view :login
         end
 
         routing.post do
-          username = Account.normalize_username(routing.params['username'])
-          password = routing.params['password'].to_s
-
-          login_errors = login_field_errors(username, password)
-
-          if login_errors.empty?
-            authed = AuthenticateAccount.new(App.config).call(
-              username: username, password: password
-            )
-            account = Account.new(authed[:account], authed[:auth_token])
-
-            CurrentSession.new(session).current_account = account
-            flash[:notice] = "Welcome back #{account.handle}!"
-            routing.redirect '/'
+          login_input = Form::LoginCredentials.new.call(routing.params)
+          if login_input.failure?
+            flash.now[:error] = Form.validation_errors(login_input)
+            response.status = 400
+            next view(:login)
           end
 
-          response.status = 400
-          view :login, locals: { field_errors: login_errors }
+          # Use to_h to ensure we have a clean hash for service call
+          credentials = login_input.to_h
+          username = Account.normalize_username(credentials[:username])
+          password = credentials[:password]
+
+          account = AuthenticateAccount.new(App.config).call(
+            username: username, password: password
+          )
+
+          CurrentSession.new(session).current_account = account
+          flash[:notice] = "Welcome back #{account.handle}!"
+          routing.redirect '/'
         rescue AuthenticateAccount::UnauthorizedError
+          flash.now[:error] = { username: '', password: 'Login failed. Check your username and password.' }
           response.status = 400
-          view :login, locals: { field_errors: login_failed_errors }
+          view :login
         rescue AuthenticateAccount::ApiServerError => e
           App.logger.warn "API server error: #{e.inspect}"
           flash[:error] = 'Our servers are not responding -- please try later'
           response.status = 500
           routing.redirect @login_route
         rescue StandardError => e
-          App.logger.warn "LOGIN FAILED: #{e.inspect}"
+          # CRITICAL: Log the actual error to find the root cause
+          App.logger.error "LOGIN CRASHED: #{e.class} - #{e.message}\n#{e.backtrace[0..5].join("\n")}"
+          flash.now[:error] = { username: '', password: 'Login failed. Check your username and password.' }
           response.status = 400
-          view :login, locals: { field_errors: login_failed_errors }
+          view :login
         end
       end
 
@@ -143,54 +200,7 @@ module FaceCloak
         end
       end
 
-      routing.on 'register' do
-        routing.is String do |registration_token|
-          token = RegistrationToken.load(registration_token)
-          view :register_confirm, locals: {
-            registration_token: registration_token,
-            email: token.email,
-            username: '',
-            username_error: nil,
-            password_error: nil,
-            password_confirm_error: nil
-          }
-        rescue RegistrationToken::InvalidTokenError
-          flash[:error] = 'Verification link is invalid or expired'
-          routing.redirect @register_route
-        end
-
-        routing.is do
-          routing.get do
-            clear_email_verification_pending
-            view :register, locals: { field_error: nil }
-          end
-
-          routing.post do
-            email = routing.params['email'].to_s.strip
-            if email.empty?
-              response.status = 400
-              next view(:register, locals: { field_error: 'Enter your email address' })
-            end
-
-            VerifyRegistration.new(App.config).call(email: email)
-            mark_email_verification_pending(email)
-
-            routing.redirect '/auth/email_verification'
-          rescue VerifyRegistration::VerificationError => e
-            response.status = 400
-            view :register, locals: { field_error: e.message }
-          rescue VerifyRegistration::ApiServerError => e
-            App.logger.warn "API server error: #{e.inspect}"
-            flash[:error] = 'Our servers are not responding -- please try later'
-            response.status = 500
-            routing.redirect @register_route
-          rescue StandardError => e
-            App.logger.warn "REGISTRATION FAILED: #{e.inspect}"
-            response.status = 400
-            view :register, locals: { field_error: 'Could not start registration' }
-          end
-        end
-      end
+      route_registration(routing)
     end
   end
 end

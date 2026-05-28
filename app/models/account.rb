@@ -1,14 +1,23 @@
 # frozen_string_literal: true
 
+require 'ostruct'
+
 module FaceCloak
   # Session identity wrapper for API account data and its bearer token.
   class Account
-    attr_reader :account_info, :auth_token
+    attr_reader :account_info, :auth_token, :policies
+
+    def self.from_api(account_info, auth_token = nil)
+      new(account_info, auth_token)
+    end
 
     def initialize(account_info, auth_token)
       @account_info = account_info
       @auth_token = auth_token
+      @policies = OpenStruct.new(account_info['policies'] || {}) # rubocop:disable Style/OpenStructUse
     end
+
+    private_class_method :new
 
     def logged_in?
       !@account_info.nil? && !@auth_token.to_s.empty?
@@ -32,6 +41,10 @@ module FaceCloak
 
     def email
       attributes&.dig('email')
+    end
+
+    def capabilities
+      @account_info&.dig('capabilities') || {}
     end
 
     def [](key)

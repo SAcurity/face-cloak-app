@@ -31,16 +31,26 @@ module FaceCloak
         # POST /account/[registration_token]
         routing.post do
           token = RegistrationToken.load(username_or_token)
-          username = Account.normalize_username(routing.params['username'])
-          password = routing.params['password'].to_s
-          password_confirm = routing.params['password_confirm'].to_s
-          errors = completion_errors(username, password, password_confirm)
 
-          unless errors.empty?
+          # Normalize username before validation to match contract expectations
+          params = routing.params.dup
+          params['username'] = Account.normalize_username(params['username'])
+
+          completion_input = Form::AccountCompletion.new.call(params)
+
+          if completion_input.failure?
+            flash.now[:error] = Form.validation_errors(completion_input)
             response.status = 400
             next view(:register_confirm,
-                      locals: completion_locals(username_or_token, token.email, username, errors))
+                      locals: {
+                        registration_token: username_or_token,
+                        email: token.email,
+                        username: Account.handle_for(completion_input[:username])
+                      })
           end
+
+          username = completion_input[:username]
+          password = completion_input[:password]
 
           CreateAccount.new(App.config).call(email: token.email, username: username, password: password)
           flash[:notice] = 'Account created -- please log in'
@@ -50,9 +60,18 @@ module FaceCloak
           routing.redirect '/auth/register'
         rescue CreateAccount::InvalidAccount => e
           response.status = 400
+          api_errors = if e.message.to_s.downcase.include?('username')
+                         { username: e.message }
+                       else
+                         { password_confirm: e.message }
+                       end
+          flash.now[:error] = api_errors
           next view(:register_confirm,
-                    locals: completion_locals(username_or_token, token.email, username,
-                                              api_completion_errors(e.message)))
+                    locals: {
+                      registration_token: username_or_token,
+                      email: token.email,
+                      username: Account.handle_for(username)
+                    })
         rescue StandardError => e
           App.logger.error "ERROR CREATING ACCOUNT: #{e.inspect}"
           flash[:error] = 'Could not create account'
@@ -78,33 +97,8 @@ module FaceCloak
 
     private
 
-    def completion_errors(username, password, password_confirm)
-      {}.tap do |errors|
-        errors[:username] = 'Enter your username' if username.empty?
-        errors[:password] = 'Enter your password' if password.empty?
-        errors[:password_confirm] = 'Confirm your password' if password_confirm.empty?
-
-        if password_confirm && !password_confirm.empty? && password != password_confirm
-          errors[:password_confirm] = 'Passwords did not match'
-        end
-      end
-    end
-
-    def completion_locals(token, email, username, errors)
-      {
-        registration_token: token,
-        email: email,
-        username: Account.handle_for(username),
-        username_error: errors[:username],
-        password_error: errors[:password],
-        password_confirm_error: errors[:password_confirm]
-      }
-    end
-
-    def api_completion_errors(error)
-      return { username: error } if error.to_s.downcase.include?('username')
-
-      { password_confirm: error }
+    def image_owned_by_current?(image, account)
+      image['attributes']['owner']['id'].to_s == account.id.to_s
     end
   end
 end

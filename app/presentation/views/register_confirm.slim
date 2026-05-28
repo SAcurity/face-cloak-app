@@ -4,9 +4,14 @@ div class="auth-page auth-page-compact row justify-content-center"
       h1 class="display-md" Complete Your Registration
 
     div class="store-utility-card"
+      - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
+      - username_error = errors[:username] || (defined?(username_error) ? username_error : nil)
+      - password_error = errors[:password] || (defined?(password_error) ? password_error : nil)
+      - password_confirm_error = errors[:password_confirm] || (defined?(password_confirm_error) ? password_confirm_error : nil)
+      - password_has_error = !!password_error
+      - password_confirm_has_error = !!password_confirm_error
+
       form method='post' action="/account/#{registration_token}" id='form-register-confirm' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
-        - password_has_error = defined?(password_error) && password_error
-        - password_confirm_has_error = defined?(password_confirm_error) && password_confirm_error
 
         div class="form-group mb-4"
           label class="caption-strong mb-2 d-block" Verified email

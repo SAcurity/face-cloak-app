@@ -4,16 +4,17 @@ div class="auth-page row justify-content-center"
       h1 class="display-md" Register
 
     div class="store-utility-card"
-      - auth_error = defined?(field_error) ? field_error : nil
+      - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
+      - email_error = errors[:email]
 
       form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
         div class="form-group mb-4"
           label for='input-email' class="caption-strong mb-2 d-block" Email
-          input type='email' name='email' id='input-email' class="search-input w-100 ps-3 #{auth_error ? 'auth-input-error' : ''}" placeholder="name@domain.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
-          - if auth_error
+          input type='email' name='email' id='input-email' class="search-input w-100 ps-3 #{email_error ? 'auth-input-error' : ''}" placeholder="name@domain.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+          - if email_error
             div class="auth-field-message mt-2"
               i class="fas fa-exclamation-circle me-2" aria-hidden="true"
-              span = auth_error
+              span = email_error
 
         div class="text-center mt-5"
           button type='submit' id='button-register' value='register' class="btn btn-primary btn-large w-100"

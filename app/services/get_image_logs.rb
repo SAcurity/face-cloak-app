@@ -9,7 +9,7 @@ module FaceCloak
 
     def call(image_id:, auth_token:)
       @client.get("/images/#{image_id}/logs", auth_token: auth_token)
-             .fetch('data', []).map { |log| log['attributes'] }
+             .fetch('data', []).map { |log| ImageLog.from_api(log) }
     end
   end
 end
