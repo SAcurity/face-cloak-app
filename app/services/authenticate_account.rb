@@ -33,10 +33,10 @@ module FaceCloak
 
     def authenticated_account(response)
       attributes = response.fetch('attributes')
-      {
-        account: attributes.fetch('account'),
-        auth_token: attributes.fetch('auth_token')
-      }
+      Account.from_api(
+        attributes.fetch('account'),
+        attributes.fetch('auth_token')
+      )
     end
   end
 end

@@ -4,7 +4,7 @@ div class="auth-page row justify-content-center"
       h1 class="display-md" Welcome Back!
 
     div class="store-utility-card"
-      - errors = defined?(field_errors) ? field_errors : {}
+      - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
       - username_error = errors[:username]
       - password_error = errors[:password]
       - username_has_error = errors.key?(:username)

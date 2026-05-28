@@ -4,8 +4,76 @@ require 'roda'
 require_relative 'app'
 
 module FaceCloak
+  # Routes for face-record operations (respond, decline, assign).
+  module ImagesFaceRecordRoute
+    private
+
+    def route_face_records(routing, image_id, auth_token)
+      routing.on 'faces', String do |face_id|
+        routing.on('respond') { route_respond_face(routing, image_id, face_id, auth_token) }
+        routing.on('decline') { route_decline_face(routing, image_id, face_id, auth_token) }
+        routing.post { route_assign_face(routing, image_id, face_id, auth_token) }
+      end
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def route_respond_face(routing, image_id, face_id, auth_token)
+      routing.post do
+        return_view = safe_image_return_view(routing.params)
+        RespondFaceAssignment.new(FaceCloak::App.config).call(
+          face_id: face_id, cloak_type: routing.params['cloak_type'], auth_token: auth_token
+        )
+        flash[:notice] = 'Masking preference saved'
+        routing.redirect "/images/#{image_id}/#{return_view}"
+      rescue StandardError => e
+        flash[:error] = "Could not save masking preference: #{e.message}"
+        routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    def route_decline_face(routing, image_id, face_id, auth_token)
+      routing.post do
+        return_view = safe_image_return_view(routing.params)
+        DeclineFaceAssignment.new(FaceCloak::App.config).call(face_id: face_id, auth_token: auth_token)
+        flash[:notice] = 'Assignment declined'
+        routing.redirect "/images/#{image_id}/#{return_view}"
+      rescue StandardError => e
+        flash[:error] = "Could not decline assignment: #{e.message}"
+        routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
+      end
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def route_assign_face(routing, image_id, face_id, auth_token)
+      assignment_input = FaceCloak::Form::FaceAssignment.new.call(routing.params)
+      if assignment_input.failure?
+        flash[:error] = FaceCloak::Form.validation_errors(assignment_input).values.join(', ')
+        return routing.redirect "/images/#{image_id}/raw"
+      end
+
+      uid = assignment_input[:assigned_user_id].to_s.strip
+      self_assign = assignment_input[:assign_self].to_s == 'true'
+
+      if uid == @current_account.id.to_s && !self_assign
+        flash[:error] = 'Use [Myself] button to assign your own face'
+        return routing.redirect "/images/#{image_id}/raw"
+      end
+
+      AssignFace.new(FaceCloak::App.config).call(face_id: face_id, assigned_user_id: uid, auth_token: auth_token)
+      flash[:notice] = 'Face assigned successfully'
+      routing.redirect "/images/#{image_id}/raw"
+    rescue StandardError => e
+      flash[:error] = "Could not assign face: #{e.message}"
+      routing.redirect "/images/#{image_id}/raw"
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+  end
+
   # Web controller for the FaceCloak Web App
   class App < Roda
+    include ImagesFaceRecordRoute
+
     route('images') do |routing|
       require_login!(routing)
       auth_token = @current_account.auth_token
@@ -42,54 +110,7 @@ module FaceCloak
           end
         end
 
-        # POST /images/[image_id]/faces/[face_id]
-        routing.on 'faces', String do |face_id|
-          routing.on 'respond' do
-            routing.post do
-              return_view = safe_image_return_view(routing.params)
-              RespondFaceAssignment.new(FaceCloak::App.config).call(
-                face_id: face_id, cloak_type: routing.params['cloak_type'], auth_token: auth_token
-              )
-              flash[:notice] = 'Masking preference saved'
-              routing.redirect "/images/#{image_id}/#{return_view}"
-            rescue StandardError => e
-              flash[:error] = "Could not save masking preference: #{e.message}"
-              return_view = safe_image_return_view(routing.params)
-              routing.redirect "/images/#{image_id}/#{return_view}"
-            end
-          end
-
-          routing.on 'decline' do
-            routing.post do
-              return_view = safe_image_return_view(routing.params)
-              DeclineFaceAssignment.new(FaceCloak::App.config).call(face_id: face_id, auth_token: auth_token)
-              flash[:notice] = 'Assignment declined'
-              routing.redirect "/images/#{image_id}/#{return_view}"
-            rescue StandardError => e
-              flash[:error] = "Could not decline assignment: #{e.message}"
-              return_view = safe_image_return_view(routing.params)
-              routing.redirect "/images/#{image_id}/#{return_view}"
-            end
-          end
-
-          routing.post do
-            assigned_user_id = routing.params['assigned_user_id'].to_s.strip
-            assigning_self = routing.params['assign_self'].to_s == 'true'
-            if assigned_user_id == @current_account.id.to_s && !assigning_self
-              flash[:error] = 'Use [Myself] button to assign your own face'
-              routing.redirect "/images/#{image_id}/raw"
-            end
-
-            AssignFace.new(FaceCloak::App.config).call(
-              face_id: face_id, assigned_user_id: assigned_user_id, auth_token: auth_token
-            )
-            flash[:notice] = 'Face assigned successfully'
-            routing.redirect "/images/#{image_id}/raw"
-          rescue StandardError => e
-            flash[:error] = "Could not assign face: #{e.message}"
-            routing.redirect "/images/#{image_id}/raw"
-          end
-        end
+        route_face_records(routing, image_id, auth_token)
 
         # GET /images/[image_id]
         routing.is do

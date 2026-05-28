@@ -39,12 +39,16 @@ module FaceCloak
         begin
           list_images = ListImages.new(FaceCloak::App.config)
           images = list_images.call(auth_token: @current_account&.auth_token)
+
+          # Filter images based on policy if provided by API
+          images = images.reject { |image| image.policies.can_view == false }
+
           unless normalized_query.empty?
             images = images.select do |image|
               [
-                image['id'],
-                image['file_name'],
-                image['owner_id'],
+                image.id,
+                image.file_name,
+                image.owner_id,
                 image_owner_username(image)
               ].compact.any? { |value| value.to_s.downcase.include?(normalized_query) }
             end
@@ -78,11 +82,12 @@ module FaceCloak
     def images_with_upload_logs(images, auth_token)
       return images unless auth_token
 
-      images.map do |image|
-        next image unless image_upload_time_label(image) == '-'
+      images.each do |image|
+        next if image_upload_time_label(image) != '-'
 
-        image.merge('_logs' => image_logs(image['id'], auth_token))
+        image.logs = image_logs(image.id, auth_token)
       end
+      images
     end
   end
 end

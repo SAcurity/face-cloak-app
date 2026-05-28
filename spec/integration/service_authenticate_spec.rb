@@ -30,9 +30,8 @@ describe 'AuthenticateAccount service' do
 
     result = FaceCloak::AuthenticateAccount.new(app.config).call(**@credentials)
 
-    _(result[:account]['attributes']['username']).must_equal 'alice'
-    _(result[:account]['include']['system_roles']).must_equal ['member']
-    _(result[:auth_token]).must_equal 'opaque.api.token'
+    _(result.username).must_equal 'alice'
+    _(result.auth_token).must_equal 'opaque.api.token'
   end
 
   it 'SAD: raises UnauthorizedError on invalid credentials' do

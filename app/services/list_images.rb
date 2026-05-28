@@ -11,8 +11,7 @@ module FaceCloak
       response = @client.get('/images', auth_token: auth_token)
 
       response.fetch('data', []).map do |img|
-        attributes = img['attributes'] || img
-        attributes.merge('id' => attributes['id'] || img['id'])
+        Image.from_api(img)
       end
     end
   end

@@ -13,9 +13,9 @@
                 div class="feed-card-username" = owner_handle
               - else
                 a href="/account/#{owner_username}" class="feed-card-username" = owner_handle
-              div class="feed-card-time" = image_upload_time_label(image, logs: image['_logs'] || [])
-          a href="/images/#{image['id']}" class="feed-card-image-link"
-            img src="#{FaceCloak::App.config.API_URL}/images/#{image['id']}" class="feed-card-image lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
+              div class="feed-card-time" = image_upload_time_label(image, logs: image.logs)
+          a href="/images/#{image.id}" class="feed-card-image-link"
+            img src="/images/#{image.id}/protected" class="feed-card-image lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
 - else
   div class="container py-5 text-center"
     div class="product-tile tile-white rounded-lg border"

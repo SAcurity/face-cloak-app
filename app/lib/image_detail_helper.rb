@@ -17,7 +17,7 @@ module FaceCloak
 
     def image_owner_handle(image, current_account:, is_owner:)
       owner_username = image_owner_username(image)
-      return Account.handle_for(owner_username) unless owner_username.empty?
+      return Account.handle_for(owner_username) unless owner_username.to_s.empty?
 
       current_username = current_account&.username.to_s.strip
       return Account.handle_for(current_username) if is_owner && !current_username.empty?
@@ -29,11 +29,17 @@ module FaceCloak
       owner_id = image_owner_id(image)
       account_id = current_account&.id.to_s.strip
 
-      !owner_id.empty? && !account_id.empty? && owner_id == account_id
+      !owner_id.to_s.empty? && !account_id.empty? && owner_id.to_s == account_id
     end
 
     def image_upload_time_label(image, logs: [])
-      time = first_present(image, IMAGE_TIME_KEYS) || image_log_time(logs)
+      time = if image.respond_to?(:attributes)
+               first_present(image.attributes, IMAGE_TIME_KEYS)
+             elsif image.is_a?(Hash)
+               first_present(image, IMAGE_TIME_KEYS)
+             end
+
+      time ||= image_log_time(logs)
       time ? format_time(time) : '-'
     end
 
@@ -43,15 +49,23 @@ module FaceCloak
     end
 
     def image_owner_username(image)
-      owner = image['owner'].is_a?(Hash) ? image['owner'] : {}
-      attrs = owner['attributes'].is_a?(Hash) ? owner['attributes'] : owner
-      attrs['username'].to_s.strip
+      if image.respond_to?(:owner_username)
+        image.owner_username.to_s.strip
+      else
+        owner = image['owner'].is_a?(Hash) ? image['owner'] : {}
+        attrs = owner['attributes'].is_a?(Hash) ? owner['attributes'] : owner
+        attrs['username'].to_s.strip
+      end
     end
 
     def image_owner_id(image)
-      owner = image['owner'].is_a?(Hash) ? image['owner'] : {}
-      attrs = owner['attributes'].is_a?(Hash) ? owner['attributes'] : owner
-      (image['owner_id'] || attrs['id'] || owner['id']).to_s.strip
+      if image.respond_to?(:owner_id)
+        image.owner_id.to_s.strip
+      else
+        owner = image['owner'].is_a?(Hash) ? image['owner'] : {}
+        attrs = owner['attributes'].is_a?(Hash) ? owner['attributes'] : owner
+        (image['owner_id'] || attrs['id'] || owner['id']).to_s.strip
+      end
     end
 
     def face_box_left(face, image)

@@ -9,25 +9,27 @@ module FaceCloak
     end
 
     def call(image_id, auth_token: nil)
-      image = find_image(image_id, auth_token)
-      return nil unless image
+      image_envelope = find_image_envelope(image_id, auth_token)
+      return nil unless image_envelope
 
-      image.merge('faces' => fetch_faces(image_id, auth_token: auth_token))
+      image_envelope['faces'] = fetch_faces(image_id, auth_token: auth_token)
+      Image.from_api(image_envelope)
     rescue StandardError
       nil
     end
 
     private
 
-    def find_image(image_id, auth_token)
-      public_image = find_in_list(image_id, auth_token: nil)
-      return public_image if public_image
+    def find_image_envelope(image_id, auth_token)
+      public_env = find_in_raw_list(image_id, auth_token: nil)
+      return public_env if public_env
 
-      find_in_list(image_id, auth_token: auth_token)
+      find_in_raw_list(image_id, auth_token: auth_token) if auth_token
     end
 
-    def find_in_list(image_id, auth_token:)
-      @list_images.call(auth_token: auth_token).find { |img| img['id'].to_s == image_id.to_s }
+    def find_in_raw_list(image_id, auth_token:)
+      response = @client.get('/images', auth_token: auth_token)
+      response.fetch('data', []).find { |img| (img['attributes']&.dig('id') || img['id']).to_s == image_id.to_s }
     rescue StandardError
       nil
     end
