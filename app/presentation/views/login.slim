@@ -13,7 +13,9 @@ div class="auth-page row justify-content-center"
       form method='post' action='/auth/login' id='form-login' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
         div class="form-group mb-4"
           label for='input-username' class="caption-strong mb-2 d-block" Username
-          input type='text' name='username' id='input-username' class="search-input w-100 ps-3 #{username_has_error ? 'auth-input-error' : ''}" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-invalid=(username_has_error ? 'true' : 'false') aria-describedby=(username_error && !username_error.empty? ? 'username-error' : nil)
+          div class="input-group"
+            span class="input-group-text" @
+            input type='text' name='username' id='input-username' class="search-input form-control ps-3 #{username_has_error ? 'auth-input-error' : ''}" placeholder="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-invalid=(username_has_error ? 'true' : 'false') aria-describedby=(username_error && !username_error.empty? ? 'username-error' : nil)
           - if username_error && !username_error.empty?
             div id="username-error" class="auth-field-message mt-2"
               i class="fas fa-exclamation-circle me-2" aria-hidden="true"

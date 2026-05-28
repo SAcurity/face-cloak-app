@@ -115,7 +115,7 @@ FaceCloak must not copy Tyto's initial `email + username` registration payload e
 - `require_app.rb` currently loads `lib`, `services`, and `controllers`; if `app/models` is added, it must load `models` too.
 - FaceCloak API already appears to support this week's token contract:
   - `POST /api/v1/auth/authenticate` returns `attributes.account` and `attributes.auth_token`.
-  - `POST /api/v1/auth/register` validates registration and sends email through Resend.
+  - `POST /api/v1/auth/register` validates registration and sends email through Mailgun.
   - Protected routes require `Authorization: Bearer <auth_token>`.
   - API README explicitly says not to send caller identity through `X-Actor-Id`, `owner_id`, username, or user id fields.
 - User-provided API contract update on 2026-05-22:
@@ -166,112 +166,112 @@ Out of scope:
 
 ### 1. Setup and Baseline
 
-- [ ] Confirm branch name, likely `3-auth-token`.
-- [ ] Run current checks before edits:
-  - [ ] `rake spec`
-  - [ ] `rake style`
-- [ ] Read the FaceCloak API README route contract before changing App service signatures.
-- [ ] Keep this plan updated after each meaningful implementation step.
+- [x] Confirm branch name, likely `3-auth-token`.
+- [x] Run current checks before edits:
+  - [x] `rake spec`
+  - [x] `rake style`
+- [x] Read the FaceCloak API README route contract before changing App service signatures.
+- [x] Keep this plan updated after each meaningful implementation step.
 
 ### 2. Registration Token
 
-- [ ] Add `app/lib/registration_token.rb`.
-- [ ] Follow Tyto's shape but remove username from the token payload:
-  - [ ] `RegistrationToken.new(email:)`
-  - [ ] `RegistrationToken.load(token_string)`
-  - [ ] `#email`
-  - [ ] `#to_s`
-  - [ ] `InvalidTokenError`
-- [ ] Use `SecureMessage.encrypt(email: email).to_s`.
-- [ ] Rescue decryption/JSON failures and raise `InvalidTokenError`.
-- [ ] Add `spec/lib/registration_token_spec.rb`.
-- [ ] Assert token payload does not contain username, password, roles, or account id.
+- [x] Add `app/lib/registration_token.rb`.
+- [x] Follow Tyto's shape but remove username from the token payload:
+  - [x] `RegistrationToken.new(email:)`
+  - [x] `RegistrationToken.load(token_string)`
+  - [x] `#email`
+  - [x] `#to_s`
+  - [x] `InvalidTokenError`
+- [x] Use `SecureMessage.encrypt(email: email).to_s`.
+- [x] Rescue decryption/JSON failures and raise `InvalidTokenError`.
+- [x] Add `spec/lib/registration_token_spec.rb`.
+- [x] Assert token payload does not contain username, password, roles, or account id.
 
 ### 3. Verify Registration Service
 
-- [ ] Add `app/services/verify_registration.rb`.
-- [ ] Service input: `email:` only.
-- [ ] Build `verification_url` from `App.config.APP_URL`:
+- [x] Add `app/services/verify_registration.rb`.
+- [x] Service input: `email:` only.
+- [x] Build `verification_url` from `App.config.APP_URL`:
   - `/auth/register/:registration_token`
-- [ ] Post to API:
+- [x] Post to API:
   - `POST /auth/register`
   - body: `{ email:, verification_url: }`
-- [ ] Define errors:
+- [x] Define errors:
   - `VerificationError` for 4xx validation errors
   - `ApiServerError` for 5xx/API unavailable cases
-- [ ] Add `spec/integration/service_verify_registration_spec.rb`.
-- [ ] Use WebMock to assert the request body contains a verification URL whose token decrypts to the expected `email`.
-- [ ] Assert the request body does not send username during email verification.
+- [x] Add `spec/integration/service_verify_registration_spec.rb`.
+- [x] Use WebMock to assert the request body contains a verification URL whose token decrypts to the expected `email`.
+- [x] Assert the request body does not send username during email verification.
 
 ### 4. Login Response and Session Shape
 
-- [ ] Update `app/services/authenticate_account.rb`.
-- [ ] Parse current API envelope:
+- [x] Update `app/services/authenticate_account.rb`.
+- [x] Parse current API envelope:
   - `response.fetch('attributes').fetch('account')`
   - `response.fetch('attributes').fetch('auth_token')`
-- [ ] Return `{ account: account_hash, auth_token: token_string }`.
-- [ ] Add `ApiServerError` handling for 5xx.
-- [ ] Update `spec/integration/service_authenticate_spec.rb`.
+- [x] Return `{ account: account_hash, auth_token: token_string }`.
+- [x] Add `ApiServerError` handling for 5xx.
+- [x] Update `spec/integration/service_authenticate_spec.rb`.
 
-- [ ] Add `app/models/account.rb`.
+- [x] Add `app/models/account.rb`.
   - Store `account_info` and `auth_token`.
   - Provide `logged_in?`, `logged_out?`, `id`, `username`, `email`.
   - Keep helpers minimal; FaceCloak currently mostly needs `id`, `username`, and token access.
   - Provide `handle` or equivalent display helper that returns `@username` for UI while keeping `username` canonical.
-- [ ] Add `app/models/current_session.rb`.
+- [x] Add `app/models/current_session.rb`.
   - Store account info and token as separate secure session keys.
   - Recommended keys: `:account` and `:auth_token`, matching Tyto.
   - `#current_account` returns an `Account`.
   - `#current_account=` stores both pieces.
   - `#delete` removes both.
-- [ ] Update `require_app.rb` to load `models`.
+- [x] Update `require_app.rb` to load `models`.
 
 ### 5. ApiClient Bearer Forwarding
 
-- [ ] Change `ApiClient#get`, `#post`, `#put`, and `#delete` to accept `auth_token: nil`.
-- [ ] Add private `http(auth_token)` helper:
+- [x] Change `ApiClient#get`, `#post`, `#put`, and `#delete` to accept `auth_token: nil`.
+- [x] Add private `http(auth_token)` helper:
   - no token: `HTTP`
   - token: `HTTP.auth("Bearer #{auth_token}")`
-- [ ] Preserve existing JSON parsing and `ApiError` behavior.
-- [ ] Remove or stop using:
+- [x] Preserve existing JSON parsing and `ApiError` behavior.
+- [x] Remove or stop using:
   - `authenticated_get`
   - `authenticated_post`
   - `authenticated_put`
   - `authenticated_delete`
-- [ ] Check multipart upload separately because it currently uses raw `HTTP.headers`; it must also use Bearer auth.
+- [x] Check multipart upload separately because it currently uses raw `HTTP.headers`; it must also use Bearer auth.
 
 ### 6. Controllers
 
 #### `auth.rb`
 
-- [ ] Login POST:
+- [x] Login POST:
   - call updated `AuthenticateAccount`
   - wrap result in `Account`
   - store through `CurrentSession`
   - flash with `account.username`
-- [ ] Logout:
+- [x] Logout:
   - call `CurrentSession.new(session).delete`
-- [ ] Register GET `/auth/register`:
+- [x] Register GET `/auth/register`:
   - keep registration form route
-- [ ] Register POST `/auth/register`:
+- [x] Register POST `/auth/register`:
   - collect only `email`
   - call `VerifyRegistration`
   - redirect to `/auth/email_verification`
   - do not render or redirect to `register_confirm` directly
   - do not call `CreateAccount` here
-- [ ] Register GET `/auth/register/:registration_token`:
+- [x] Register GET `/auth/register/:registration_token`:
   - load `RegistrationToken`
   - render password confirmation view
   - invalid/tampered token redirects to `/auth/register`
 
-- [ ] Register GET `/auth/email_verification`:
+- [x] Register GET `/auth/email_verification`:
   - render an Email verification waiting page
   - explain that username/password setup only happens through the verification link
 
 #### `account.rb`
 
-- [ ] Allow `POST /account/:registration_token` before `require_login!`.
-- [ ] For token POST:
+- [x] Allow `POST /account/:registration_token` before `require_login!`.
+- [x] For token POST:
   - decrypt registration token
   - read username from the confirmation form
   - normalize username before API submission
@@ -281,85 +281,85 @@ Out of scope:
   - never trust email fields from the browser at this stage
   - if API reports duplicate username, re-render the confirmation form with a username-field warning
   - keep the verification token available when re-rendering so the user can retry a different username
-- [ ] For logged-in account page:
+- [x] For logged-in account page:
   - use `@current_account.username` if adopting `Account` model
   - list own images through Bearer-token API calls
   - avoid passing `owner_id` as a trust signal
 
 #### `app.rb`
 
-- [ ] Replace `current_account_from_session` with `CurrentSession.new(session).current_account`.
-- [ ] Treat `logged_out?` account object or `nil` consistently; choose the least disruptive style.
-- [ ] Root page:
+- [x] Replace `current_account_from_session` with `CurrentSession.new(session).current_account`.
+- [x] Treat `logged_out?` account object or `nil` consistently; choose the least disruptive style.
+- [x] Root page:
   - if logged in, list images using auth token so API returns token-derived resources.
   - if logged out, either show public/filtered list only if API route is public, or show empty/listing fallback depending on current product behavior.
 
 #### `images.rb`
 
-- [ ] Replace `current_account_id = @current_account['id']` with token use.
-- [ ] Raw image proxy:
+- [x] Replace `current_account_id = @current_account['id']` with token use.
+- [x] Raw image proxy:
   - send `Authorization: Bearer <token>` to `/images/:id/raw`
   - do not send `X-Actor-Id`
-- [ ] Logs:
+- [x] Logs:
   - `GetImageLogs.call(image_id:, auth_token:)`
-- [ ] Face assignment:
+- [x] Face assignment:
   - `AssignFace.call(face_id:, assigned_username:, auth_token:)` when the API supports username-based assignment
   - until the API endpoint is finalized, isolate payload construction inside `AssignFace` so the controller/view do not depend on numeric user ids
   - treat `@` as a mention/user-menu trigger and strip it before the API call
-- [ ] Show image:
+- [x] Show image:
   - `GetImage.call(image_id, auth_token:)`
   - compute owner UI from returned image payload and current account id only for presentation, not authorization
-- [ ] Upload:
+- [x] Upload:
   - `UploadImage.call(auth_token:, file_path:, file_name:)`
   - do not send `owner_id`; API derives owner from token.
 
 ### 7. Services to Refactor
 
-- [ ] `list_images.rb`
+- [x] `list_images.rb`
   - Replace `current_account_id:` with `auth_token:`.
   - `GET /images` with `auth_token:` should return images owned/accessible by the authenticated account.
   - Remove client-side `owner_id` filtering where possible.
 
-- [ ] `get_image.rb`
+- [x] `get_image.rb`
   - Accept `auth_token:`.
   - Use `ListImages.call(auth_token:)`.
   - Fetch face records using `GET /images/:id/face_records` with `auth_token:`.
 
-- [ ] `get_image_logs.rb`
+- [x] `get_image_logs.rb`
   - Accept `auth_token:`.
   - Use `GET /images/:id/logs` with `auth_token:`.
 
-- [ ] `assign_face.rb`
+- [x] `assign_face.rb`
   - Accept `auth_token:`.
   - Accept `assigned_username:` from UI input, including mention text such as `@alice`.
   - Normalize `@alice` to the API's expected canonical username in one place.
   - Use `POST /face_records/:id/assignment` with Bearer token.
   - Payload should target the assignee by username once the API contract supports it; do not leak numeric account id lookup into the view.
 
-- [ ] `upload_image.rb`
+- [x] `upload_image.rb`
   - Accept `auth_token:`.
   - Multipart POST to `/images`.
   - Include `Authorization: Bearer <token>`.
   - Remove `owner_id` form field.
 
-- [ ] `create_account.rb`
+- [x] `create_account.rb`
   - Confirm it stays unauthenticated `POST /accounts`.
   - No auth token required.
 
 ### 8. Views
 
-- [ ] Update `app/presentation/views/register.slim`.
+- [x] Update `app/presentation/views/register.slim`.
   - Remove password input.
   - Remove username input.
   - Keep email only.
   - Button text should indicate sending a verification email.
 
-- [ ] Add `app/presentation/views/email_verification.slim`.
+- [x] Add `app/presentation/views/email_verification.slim`.
   - Show "Email verification" copy after email submit.
   - Do not include username/password inputs.
   - Provide a way to return to the email form if the email address was wrong.
 
-- [ ] Add `app/presentation/views/register_confirm.slim`.
+- [x] Add `app/presentation/views/register_confirm.slim`.
   - Show verified email as read-only display.
   - Add username input with a visible default `@` prefix.
   - Store/submit only the canonical username value expected by the API; do not accidentally submit `@@alice`.
@@ -367,47 +367,47 @@ Out of scope:
   - Ask for password and password confirmation.
   - Submit to `/account/:registration_token`.
 
-- [ ] Update account/profile display text so usernames appear as `@username` where they are shown to users.
-- [ ] Keep login username input plain; do not show `@` there because login expects normal username entry.
+- [x] Update account/profile display text so usernames appear as `@username` where they are shown to users.
+- [x] Keep login username input plain; do not show `@` there because login expects normal username entry.
 
-- [ ] Update face assignment controls in `app/presentation/views/images/show.slim`.
+- [x] Update face assignment controls in `app/presentation/views/images/show.slim`.
   - Replace "User ID" placeholder with mention-style copy, e.g. "Type @ to choose a user".
   - Input name should reflect the canonical target identifier, e.g. `assigned_username`.
   - Add local validation/help state for unknown target responses from the API.
   - Later, wire `@` to open the user menu/autocomplete once the user-search endpoint is available.
 
-- [ ] Audit views for raw hash account access.
+- [x] Audit views for raw hash account access.
   - If using `Account` model, update `@current_account['username']` style reads to methods where needed.
   - Keep changes small and compatible with existing Slim templates.
 
 ### 9. Tests
 
-- [ ] Add registration token unit spec.
-- [ ] Add verify registration integration spec.
-- [ ] Update authenticate account integration spec for new token envelope.
-- [ ] Update/create ApiClient spec if useful for Bearer header behavior.
-- [ ] Update service specs that currently assert `X-Actor-Id`.
-- [ ] Update/create registration completion tests:
+- [x] Add registration token unit spec.
+- [x] Add verify registration integration spec.
+- [x] Update authenticate account integration spec for new token envelope.
+- [x] Update/create ApiClient spec if useful for Bearer header behavior.
+- [x] Update service specs that currently assert `X-Actor-Id`.
+- [x] Update/create registration completion tests:
   - email-only token enters completion form
   - username/password are sent only after verification link
   - duplicate username error re-renders with username field warning
   - username normalization accepts `alice` and `@alice` without creating `@@alice`
-- [ ] Add or update upload service spec if multipart header behavior is practical to test.
-- [ ] Add/update assignment service/view tests for username mention input once the API contract is settled.
-- [ ] Run:
-  - [ ] `rake spec`
-  - [ ] `rake style`
-  - [ ] `rake audit`
-  - [ ] `rake release_check`
+- [x] Add or update upload service spec if multipart header behavior is practical to test.
+- [x] Add/update assignment service/view tests for username mention input once the API contract is settled.
+- [x] Run:
+  - [x] `rake spec`
+  - [x] `rake style`
+  - [x] `rake audit`
+  - [x] `rake release_check`
 
 ## Manual Verification
 
 - [ ] Start FaceCloak API locally on port `3000`.
-- [ ] Confirm API has registration email env vars for local/test provider:
-  - `RESEND_API_KEY`
-  - `RESEND_API_URL`
-  - `RESEND_FROM_EMAIL`
-  - `RESEND_FROM_NAME`
+- [ ] Confirm API has registration email env vars configured for Mailgun:
+  - `MAILGUN_API_KEY`
+  - `MAILGUN_DOMAIN`
+  - `MAILGUN_FROM_EMAIL`
+  - `MAILGUN_FROM_NAME`
 - [ ] Start App locally on port `9292`.
 - [ ] Register:
   - submit email only
@@ -484,6 +484,14 @@ Out of scope:
   - `RBENV_VERSION=4.0.2 /Users/lyc/.rbenv/shims/bundle exec rake spec`
   - `RBENV_VERSION=4.0.2 /Users/lyc/.rbenv/shims/bundle exec rake style`
   - `RBENV_VERSION=4.0.2 /Users/lyc/.rbenv/shims/bundle exec rake release_check`
+- [x] Face assignment workflow implementation completed:
+  - Added FaceAssignmentHelper, FaceBoxHelper, ImageDetailHelper, ImageRouteHelper
+  - Implemented DeclineFaceAssignment, RespondFaceAssignment, ListAccounts services
+  - Refactored images/show.slim with face overlay, assignment sidebar, and mention-style input
+  - Updated images.rb controller with new routing patterns for protected/raw views
+  - Added username autocomplete and face selection interactive JavaScript
+  - Comprehensive CSS for face assignment UI components
+  - Service tests added for new face assignment workflows
 - [ ] Manual browser/API smoke test pending.
 
-Last updated: 2026-05-22
+Last updated: 2026-05-28
