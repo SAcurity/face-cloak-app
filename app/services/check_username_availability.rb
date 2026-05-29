@@ -15,9 +15,12 @@ module FaceCloak
       username = Account.normalize_username(username)
       return false if username.empty?
 
-      @client.get("/accounts/#{URI.encode_www_form_component(username)}")
+      # Use the new search endpoint logic: find account by username
+      # If found (200 OK), then the username is NOT available (taken)
+      @client.post('/accounts/search', { username: username })
       false
     rescue ApiClient::ApiError => e
+      # If not found (404), then the username IS available
       return true if e.status == 404
       raise ApiServerError, e.message if e.status >= 500
 
