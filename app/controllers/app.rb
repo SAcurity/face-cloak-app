@@ -17,7 +17,14 @@ module FaceCloak
     use Rack::MethodOverride
 
     plugin :render, engine: 'slim', views: 'app/presentation/views'
-    plugin :assets, css: 'style.css', js: 'main.js', path: 'app/presentation/assets'
+    plugin :assets,
+           css: 'style.css',
+           js: ['main.js',
+                'modules/common-ui.js',
+                'modules/dialogs.js',
+                'modules/auth.js',
+                'modules/face-assignment.js'],
+           path: 'app/presentation/assets'
     plugin :public, root: 'app/presentation/public'
     plugin :multi_route
     plugin :flash

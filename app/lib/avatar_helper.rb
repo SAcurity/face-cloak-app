@@ -25,17 +25,15 @@ module FaceCloak
     end
 
     def color_for(username)
-      # Deterministic, muted palette that avoids using the primary action color
-      sum = username.to_s.each_byte.sum
+      first = username.to_s[0]&.upcase
       colors = %w[
-        #6b6f77
-        #7f8a92
-        #9aa3ab
-        #a08d79
-        #8aa28a
-        #b29aa6
+        #c0392b #d35400 #f39c12 #27ae60 #16a085 #2980b9 #8e44ad #2c3e50 #7f8c8d
+        #b03a2e #af601a #b7950b #1e8449 #117a65 #21618c #6c3483 #34495e #566573
+        #e74c3c #e67e22 #f1c40f #2ecc71 #1abc9c #3498db #9b59b6 #5d6d7
       ]
-      colors[sum % colors.length]
+      return colors[first.ord - 'A'.ord] if first&.match?(/[A-Z]/)
+
+      colors[0]
     end
   end
 end

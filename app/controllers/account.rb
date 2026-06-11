@@ -5,9 +5,130 @@ require 'roda'
 require_relative 'app'
 
 module FaceCloak
+  # Actions for account settings and admin account management.
+  module AccountSettingsActions
+    private
+
+    def delete_account_response(routing, target_username)
+      target = Account.normalize_username(target_username)
+      delete_account(target)
+      return deleted_self_response(routing) if target == @current_account.username
+
+      flash[:notice] = 'Account deleted'
+      routing.redirect '/account/settings'
+    rescue StandardError => e
+      flash[:error] = "Could not delete account: #{e.message}"
+      routing.redirect '/account/settings'
+    end
+
+    def deleted_self_response(routing)
+      CurrentSession.new(session).delete
+      flash[:notice] = 'Account deleted'
+      routing.redirect '/auth/login'
+    end
+
+    def delete_account(target)
+      DeleteAccount.new(App.config).call(
+        username: target,
+        auth_token: @current_account.auth_token
+      )
+    end
+
+    def update_username_response(routing)
+      sync_current_account(update_username(routing.params['username']))
+      flash[:notice] = 'Username updated'
+      routing.redirect '/account/settings'
+    rescue StandardError => e
+      flash[:error] = "Could not update username: #{e.message}"
+      routing.redirect '/account/settings'
+    end
+
+    def update_password_response(routing)
+      update_password(routing.params)
+      flash[:notice] = 'Password updated'
+      routing.redirect '/account/settings'
+    rescue StandardError => e
+      flash[:error] = "Could not update password: #{e.message}"
+      routing.redirect '/account/settings'
+    end
+
+    def render_account_settings
+      status_data = ListAccountStatuses.new(App.config).call(auth_token: @current_account.auth_token)
+      view 'account/settings',
+           locals: {
+             accounts: status_data[:accounts],
+             capabilities: status_data[:capabilities]
+           }
+    end
+
+    def update_username(username)
+      UpdateAccount.new(App.config).call(
+        username: @current_account.username,
+        updates: { username: Account.normalize_username(username) },
+        auth_token: @current_account.auth_token
+      )
+    end
+
+    def update_password(params)
+      UpdateAccount.new(App.config).call(
+        username: @current_account.username,
+        updates: password_updates(params),
+        auth_token: @current_account.auth_token
+      )
+    end
+
+    def password_updates(params)
+      {
+        current_password: params['current_password'].to_s,
+        new_password: params['new_password'].to_s
+      }
+    end
+
+    def sync_current_account(updated)
+      CurrentSession.new(session).current_account = Account.from_api(updated, @current_account.auth_token)
+      @current_account = CurrentSession.new(session).current_account
+    end
+  end
+
+  # Routes for account settings and admin account management.
+  module AccountSettingsRoute
+    include AccountSettingsActions
+
+    private
+
+    def route_account_settings(routing)
+      require_login!(routing)
+
+      route_delete_account(routing)
+      routing.on('username') { routing.post { update_username_response(routing) } }
+      routing.on('password') { routing.post { update_password_response(routing) } }
+      account_settings_response(routing)
+    end
+
+    def route_delete_account(routing)
+      routing.on String do |target_username|
+        routing.on('delete') { routing.post { delete_account_response(routing, target_username) } }
+      end
+    end
+
+    def account_settings_response(routing)
+      routing.get do
+        render_account_settings
+      rescue StandardError => e
+        App.logger.warn "ACCOUNT SETTINGS FAILED: #{e.inspect}"
+        flash[:error] = 'Could not load account settings'
+        routing.redirect '/'
+      end
+    end
+  end
+
   # Web controller for the FaceCloak Web App
   class App < Roda
+    include AccountSettingsRoute
+
     route('account') do |routing|
+      routing.on('settings') { route_account_settings(routing) }
+
       routing.is 'usernames' do
         require_login!(routing)
 
@@ -85,8 +206,24 @@ module FaceCloak
         routing.get do
           if username == @current_account.username
             images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
-            images = images.select { |image| image_owned_by_current?(image, @current_account) }
-            view 'account/show', locals: { username: @current_account.handle, images: images }
+
+            owned_images = []
+            assigned_images = []
+            current_user_id = @current_account.id.to_s
+
+            images.each do |img|
+              if img.owner_id.to_s == current_user_id
+                owned_images << img
+              else
+                assigned_images << img
+              end
+            end
+
+            view 'account/show', locals: {
+              username: @current_account.handle,
+              owned_images: owned_images,
+              assigned_images: assigned_images
+            }
           else
             flash[:error] = 'Profile view for other users not implemented yet'
             routing.redirect '/'

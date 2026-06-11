@@ -27,7 +27,8 @@ html
     - scrollable_content = current_path == '/' || current_path.start_with?('/images', '/account')
     - auth_standalone_path = ['/auth/login', '/auth/register', '/auth/email_verification'].include?(current_path) || current_path.start_with?('/auth/register/')
     - account_profile_path = current_path.start_with?('/account/') && current_path != '/account/usernames'
-    - show_back_button = current_path != '/' && !auth_standalone_path && !account_profile_path
+    - header_navigation = @routing.params['from'].to_s == 'header'
+    - show_back_button = current_path != '/' && !auth_standalone_path && !account_profile_path && !header_navigation
     / Main Nav (Frosted Black)
     nav class="sub-nav"
       div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
@@ -44,11 +45,35 @@ html
         / Right: Post & Avatar
         div class="nav-right position-absolute d-flex align-items-center header-edge-offset"
           - if @current_account
-            a href="/images/new" class="btn btn-primary btn-sm me-3 d-inline-flex align-items-center gap-2" style="border-radius: 999px; padding: 5px 15px;"
+            - nav_notifications = assignment_notifications(@current_account)
+            - nav_notification_count = nav_notifications.length
+            a href="/images/new?from=header" class="btn btn-primary btn-sm me-3 d-inline-flex align-items-center gap-2" style="border-radius: 999px; padding: 5px 15px;"
               i class="fas fa-plus" aria-hidden="true"
               | Upload
-            a href="/account/#{@current_account.username}" class="text-decoration-none"
+            a href="/account/#{@current_account.username}?from=header" class="text-decoration-none"
               == avatar_for(@current_account.username, size: 32)
+            div class="notification-menu ms-2"
+              button type="button" class="nav-icon-button notification-trigger" title="Notifications" aria-label="Notifications" aria-expanded="false" data-notification-trigger=true
+                i class="fas fa-bell" aria-hidden="true"
+                - if nav_notification_count.positive?
+                  span class="notification-count" = nav_notification_count
+              div class="notification-panel" data-notification-panel=true
+                div class="notification-panel-header"
+                  span Notifications
+                  span class="caption text-muted" #{nav_notification_count} pending
+                - if nav_notifications.any?
+                  div class="notification-list"
+                    - nav_notifications.each do |item|
+                      a href="#{item[:path]}?from=header" class="notification-item"
+                        span class="notification-item-icon"
+                          i class="fas fa-user-shield" aria-hidden="true"
+                        span class="notification-item-text"
+                          strong Face #{item[:face_number]} needs your response
+                          small Assigned by #{item[:owner]}
+                - else
+                  div class="notification-empty" No pending assignments.
+            a href="/account/settings?from=header" class="nav-icon-button ms-2" title="Account settings" aria-label="Account settings"
+              i class="fas fa-gear" aria-hidden="true"
             a href="/auth/logout" class="nav-icon-button ms-2" title="Log out" aria-label="Log out"
               i class="fas fa-right-from-bracket" aria-hidden="true"
           - else
@@ -80,6 +105,15 @@ html
       .loader
         .spinner
         span.text Creating account...
+
+    div id="confirm-dialog" class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" hidden=true
+      div class="confirm-dialog-backdrop" data-confirm-cancel=true
+      div class="confirm-dialog-card"
+        h2 id="confirm-dialog-title" class="confirm-dialog-title" Confirm action
+        p id="confirm-dialog-message" class="confirm-dialog-message" Are you sure?
+        div class="confirm-dialog-actions"
+          button type="button" class="confirm-dialog-cancel" data-confirm-cancel=true Cancel
+          button type="button" class="danger-outline-button confirm-dialog-confirm" data-confirm-submit=true Confirm
 
     / Scripts
     script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"

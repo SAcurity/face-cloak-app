@@ -22,9 +22,9 @@ module FaceCloak
       image_data = find_image_or_not_found(image_id, auth_token)
       return "Image #{image_id} not found in API" unless image_data
 
-      can_view_raw = image_data.policies.can_view_raw
-      canonical_view = requested_view || (can_view_raw ? 'raw' : 'protected')
-      canonical_view = 'protected' if canonical_view == 'raw' && !can_view_raw
+      can_manage_faces = manageable_image?(image_data, @current_account)
+      canonical_view = requested_view || 'protected'
+      canonical_view = 'protected' if canonical_view == 'raw' && !can_manage_faces
 
       routing.redirect "/images/#{image_id}/#{canonical_view}"
     end
@@ -33,15 +33,10 @@ module FaceCloak
       image_data = find_image_or_not_found(image_id, auth_token)
       return "Image #{image_id} not found in API" unless image_data
 
-      can_view_raw = image_data.policies.can_view_raw
-      routing.redirect "/images/#{image_id}/protected" if view_type == 'raw' && !can_view_raw
+      can_manage_faces = manageable_image?(image_data, @current_account)
+      routing.redirect "/images/#{image_id}/protected" if view_type == 'raw' && !can_manage_faces
 
-      view 'images/show', locals: {
-        image: image_data,
-        image_logs: image_logs(image_id, auth_token),
-        is_owner: can_view_raw, # 'is_owner' in view now means 'has raw access'
-        view_type: view_type
-      }
+      view 'images/show', locals: image_detail_locals(image_data, image_id, auth_token, can_manage_faces, view_type)
     end
 
     def safe_image_return_view(params)
@@ -60,6 +55,26 @@ module FaceCloak
     rescue StandardError => e
       App.logger.warn "IMAGE LOG FALLBACK FAILED: #{e.inspect}"
       []
+    end
+
+    def image_detail_locals(image_data, image_id, auth_token, can_manage_faces, view_type)
+      {
+        image: image_data,
+        image_logs: image_logs(image_id, auth_token),
+        accounts_by_id: log_accounts_by_id(auth_token),
+        is_owner: can_manage_faces, # 'is_owner' in view now means 'can manage faces'
+        view_type: view_type
+      }
+    end
+
+    def manageable_image?(image, account = @current_account)
+      policies = image.policies
+      policies.can_manage_faces || image_owned_by_current?(image, account) || admin_account?(account)
+    end
+
+    def admin_account?(account)
+      capabilities = account&.capabilities || {}
+      capabilities['is_admin'] || capabilities[:is_admin]
     end
   end
 end
