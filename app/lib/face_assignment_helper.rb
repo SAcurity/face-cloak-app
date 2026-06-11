@@ -25,6 +25,10 @@ module FaceCloak
       Account.normalize_username(face_assigned_username(face)) == Account.normalize_username(username)
     end
 
+    def face_assigned?(face)
+      !face_assigned_user_id(face).to_s.empty? || !face_assigned_username(face).to_s.empty?
+    end
+
     def face_assigned_username(face)
       if face.respond_to?(:assigned_user) && face.assigned_user.is_a?(Hash)
         face.assigned_user['username'].to_s.strip
@@ -49,6 +53,12 @@ module FaceCloak
 
     def face_cloak_options
       CLOAK_OPTIONS
+    end
+
+    def cloak_option_for(value)
+      normalized = value.to_s.strip.downcase
+      CLOAK_OPTIONS.find { |option| option[:value] == normalized } ||
+        { value: normalized, label: titleize_value(normalized), icon: 'fa-shield-halved' }
     end
 
     def face_assigned_time_label(face)

@@ -1,0 +1,403 @@
+(function(app, window, document) {
+  app.registerInitializer('face-assignment', function() {
+    const boxes = Array.from(document.querySelectorAll('.face-box[data-face-target]'));
+    const panels = Array.from(document.querySelectorAll('[data-face-panel]'));
+    const logPanels = Array.from(document.querySelectorAll('[data-face-log-panel]'));
+    const selectedFaceNumber = document.getElementById('selected-face-number');
+    const usernameOptions = document.querySelector('[data-username-options]');
+    const currentUsername = normalizedUsername(usernameOptions && usernameOptions.getAttribute('data-current-username'));
+    const currentAccountId = usernameOptions && usernameOptions.getAttribute('data-current-account-id');
+    const accountStatuses = parseAccountStatuses();
+    const selectedFaceKey = 'facecloak.selectedFace:' + window.location.pathname;
+    let usernamesLoaded = false;
+
+    function normalizedUsername(value) {
+      return (value || '').trim().replace(/^@+/, '').toLowerCase();
+    }
+
+    function parseAccountStatuses() {
+      if (!usernameOptions) return {};
+      try {
+        return JSON.parse(usernameOptions.getAttribute('data-account-statuses') || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function accountStatus(account) {
+      return accountStatuses[String(account.id)] || accountStatuses['username:' + normalizedUsername(account.handle)];
+    }
+
+    function populateAccounts(accounts) {
+      if (!usernameOptions || !Array.isArray(accounts)) return;
+
+      const existing = new Set(
+        Array.from(usernameOptions.querySelectorAll('option')).map(function(option) {
+          return option.getAttribute('data-account-id');
+        })
+      );
+
+      accounts.forEach(function(account) {
+        if (!account || !account.id || normalizedUsername(account.username) === currentUsername) return;
+        if (String(account.id) === String(currentAccountId) || existing.has(String(account.id))) return;
+
+        const option = document.createElement('option');
+        option.value = account.handle || ('@' + account.username);
+        option.setAttribute('data-account-id', account.id);
+        option.setAttribute('data-account-status', accountStatus({ id: account.id, handle: option.value }) || '');
+        usernameOptions.appendChild(option);
+        existing.add(String(account.id));
+      });
+    }
+
+    function accountOptions() {
+      if (!usernameOptions) return [];
+      return Array.from(usernameOptions.querySelectorAll('option'))
+        .map(function(option) {
+          return {
+            id: option.getAttribute('data-account-id'),
+            handle: option.value,
+            status: option.getAttribute('data-account-status') || ''
+          };
+        })
+        .filter(function(account) {
+          return account.id && normalizedUsername(account.handle) !== currentUsername;
+        });
+    }
+
+    function renderSuggestions(input) {
+      const pill = input.closest('.assign-pill');
+      const menu = pill && pill.querySelector('[data-username-menu]');
+      if (!menu) return;
+
+      if (input.readOnly || pill.classList.contains('is-assigned')) {
+        menu.classList.remove('visible');
+        menu.innerHTML = '';
+        return;
+      }
+
+      const rawQuery = input.value.trim();
+      if (!rawQuery.startsWith('@')) {
+        menu.classList.remove('visible');
+        menu.innerHTML = '';
+        return;
+      }
+
+      const query = rawQuery.replace(/^@+/, '').toLowerCase();
+      const explicitSearch = query.length > 0;
+      const matches = accountOptions()
+        .filter(function(account) {
+          if (!account.handle.toLowerCase().replace(/^@+/, '').startsWith(query)) return false;
+          return explicitSearch || !account.status;
+        })
+        .slice(0, 8);
+
+      menu.innerHTML = '';
+      matches.forEach(function(account) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'username-suggestion-option' + (account.status ? ' disabled' : '');
+        option.disabled = Boolean(account.status);
+        option.setAttribute('data-account-id', account.id);
+
+        const label = document.createElement('span');
+        label.className = 'username-suggestion-handle';
+        label.textContent = account.handle;
+        option.appendChild(label);
+
+        if (account.status) {
+          const status = document.createElement('span');
+          status.className = 'username-suggestion-status';
+          status.textContent = account.status;
+          option.appendChild(status);
+        }
+
+        option.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          if (account.status) return;
+          chooseSuggestion(input, menu, option);
+        });
+
+        menu.appendChild(option);
+      });
+
+      menu.classList.toggle('visible', matches.length > 0);
+    }
+
+    function suggestionOptions(menu) {
+      if (!menu) return [];
+      return Array.from(menu.querySelectorAll('.username-suggestion-option'));
+    }
+
+    function enabledSuggestionOptions(menu) {
+      return suggestionOptions(menu).filter(function(option) {
+        return !option.disabled;
+      });
+    }
+
+    function activeSuggestion(menu) {
+      return enabledSuggestionOptions(menu).find(function(option) {
+        return option.classList.contains('active');
+      });
+    }
+
+    function setActiveSuggestion(menu, index) {
+      const options = enabledSuggestionOptions(menu);
+      suggestionOptions(menu).forEach(function(option) {
+        option.classList.remove('active');
+      });
+      options.forEach(function(option, optionIndex) {
+        option.classList.toggle('active', optionIndex === index);
+      });
+      if (options[index]) options[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    function chooseSuggestion(input, menu, option) {
+      const form = input.closest('.face-assign-form');
+      const hiddenInput = form && form.querySelector('[data-assigned-user-id-value]');
+      if (option.disabled) return;
+
+      input.value = option.querySelector('.username-suggestion-handle').textContent;
+      if (hiddenInput) hiddenInput.value = option.getAttribute('data-account-id') || '';
+      if (form) clearAssignmentError(form);
+      menu.classList.remove('visible');
+      input.focus();
+    }
+
+    function assignmentErrorElement(form) {
+      let error = form.querySelector('[data-assignment-error]');
+      if (error) return error;
+
+      const field = form.closest('.face-field');
+      const row = field && field.querySelector('.assign-control-row');
+      error = document.createElement('div');
+      error.className = 'auth-field-message assign-field-message';
+      error.setAttribute('data-assignment-error', 'true');
+      error.setAttribute('aria-live', 'polite');
+      if (row && row.parentNode) row.insertAdjacentElement('afterend', error);
+      return error;
+    }
+
+    function setAssignmentError(form, message) {
+      const input = form.querySelector('[data-username-suggest]');
+      const pill = form.querySelector('.assign-pill');
+      const error = assignmentErrorElement(form);
+      if (pill) pill.classList.add('assign-pill-error');
+      if (input) {
+        input.classList.add('auth-input-error');
+        input.setAttribute('aria-invalid', 'true');
+      }
+      if (error) error.textContent = message;
+    }
+
+    function clearAssignmentError(form) {
+      const input = form.querySelector('[data-username-suggest]');
+      const pill = form.querySelector('.assign-pill');
+      const field = form.closest('.face-field');
+      const error = field && field.querySelector('[data-assignment-error]');
+
+      if (pill) pill.classList.remove('assign-pill-error');
+      if (input) {
+        input.classList.remove('auth-input-error');
+        input.removeAttribute('aria-invalid');
+        input.setCustomValidity('');
+      }
+      if (error) error.textContent = '';
+    }
+
+    function loadUsernames() {
+      if (!usernameOptions || usernamesLoaded) return;
+      usernamesLoaded = true;
+
+      const sourceUrl = usernameOptions.getAttribute('data-source-url');
+      if (!sourceUrl) return;
+
+      window.fetch(sourceUrl, { headers: { Accept: 'application/json' } })
+        .then(function(response) {
+          if (!response.ok) return { accounts: [] };
+          return response.json();
+        })
+        .then(function(body) {
+          populateAccounts(body.accounts || []);
+          document.querySelectorAll('[data-username-suggest]').forEach(renderSuggestions);
+        })
+        .catch(function() {});
+    }
+
+    function storeActiveFace() {
+      const activeBox = boxes.find(function(box) {
+        return box.classList.contains('active');
+      });
+      if (activeBox) window.sessionStorage.setItem(selectedFaceKey, activeBox.getAttribute('data-face-target'));
+    }
+
+    function activateFace(targetId) {
+      boxes.forEach(function(box) {
+        const isActive = box.getAttribute('data-face-target') === targetId;
+        box.classList.toggle('active', isActive);
+        box.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+
+      panels.forEach(function(panel) {
+        panel.classList.toggle('active', panel.id === targetId);
+      });
+
+      logPanels.forEach(function(panel) {
+        panel.classList.toggle('active', panel.getAttribute('data-face-log-panel') === targetId);
+      });
+
+      const activePanel = document.getElementById(targetId);
+      if (selectedFaceNumber && activePanel) {
+        selectedFaceNumber.textContent = activePanel.getAttribute('data-face-number') || '';
+      }
+
+      if (activePanel) window.sessionStorage.setItem(selectedFaceKey, targetId);
+    }
+
+    document.querySelectorAll('[data-username-suggest]').forEach(function(input) {
+      input.addEventListener('focus', function() {
+        if (input.value.trim().startsWith('@')) loadUsernames();
+        renderSuggestions(input);
+      });
+
+      input.addEventListener('input', function() {
+        if (input.value.trim().startsWith('@')) loadUsernames();
+        renderSuggestions(input);
+      });
+
+      input.addEventListener('keydown', function(e) {
+        const pill = input.closest('.assign-pill');
+        const menu = pill && pill.querySelector('[data-username-menu]');
+        const options = enabledSuggestionOptions(menu);
+        if (!menu || !menu.classList.contains('visible') || !options.length) return;
+
+        const currentIndex = options.indexOf(activeSuggestion(menu));
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setActiveSuggestion(menu, currentIndex < options.length - 1 ? currentIndex + 1 : 0);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setActiveSuggestion(menu, currentIndex > 0 ? currentIndex - 1 : options.length - 1);
+        } else if (e.key === 'Enter') {
+          const option = activeSuggestion(menu) || options[0];
+          e.preventDefault();
+          chooseSuggestion(input, menu, option);
+        } else if (e.key === 'Escape') {
+          menu.classList.remove('visible');
+        }
+      });
+
+      input.addEventListener('blur', function() {
+        const pill = input.closest('.assign-pill');
+        const menu = pill && pill.querySelector('[data-username-menu]');
+        window.setTimeout(function() {
+          if (menu) menu.classList.remove('visible');
+        }, 120);
+      });
+    });
+
+    document.querySelectorAll('[data-self-choice-toggle]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const faceId = button.getAttribute('data-self-choice-toggle');
+        const choicePanel = Array.from(document.querySelectorAll('[data-self-choice-panel]')).find(function(panel) {
+          return panel.getAttribute('data-self-choice-panel') === faceId;
+        });
+        const facePanel = button.closest('.face-side-panel');
+
+        if (choicePanel) choicePanel.classList.remove('is-hidden');
+        if (facePanel && facePanel.id) window.sessionStorage.setItem(selectedFaceKey, facePanel.id);
+      });
+    });
+
+    document.querySelectorAll('.face-assign-form').forEach(function(form) {
+      const input = form.querySelector('[data-username-suggest]');
+      const hiddenInput = form.querySelector('[data-assigned-user-id-value]');
+      if (!input) return;
+
+      function declinedUsernames() {
+        return (input.getAttribute('data-declined-usernames') || '')
+          .split(',')
+          .map(normalizedUsername)
+          .filter(Boolean);
+      }
+
+      input.addEventListener('input', function() {
+        clearAssignmentError(form);
+        if (hiddenInput) hiddenInput.value = '';
+      });
+
+      form.addEventListener('submit', function(e) {
+        storeActiveFace();
+        const username = normalizedUsername(input.value);
+        const selfUsername = normalizedUsername(input.getAttribute('data-current-username')) || currentUsername;
+
+        if (username && username === selfUsername) {
+          setAssignmentError(form, 'Use Myself to assign your own face.');
+          e.preventDefault();
+          return;
+        }
+
+        if (username && declinedUsernames().includes(username)) {
+          setAssignmentError(form, input.value + ' declined this assignment.');
+          e.preventDefault();
+          return;
+        }
+
+        if (!hiddenInput || !hiddenInput.value) {
+          setAssignmentError(form, username ? 'Choose a valid account from the list.' : 'Enter a username.');
+          e.preventDefault();
+        }
+      });
+    });
+
+    document.querySelectorAll('.cloak-choice-form, .decline-assignment-form, .face-unassign-form').forEach(function(form) {
+      form.addEventListener('submit', storeActiveFace);
+    });
+
+    document.querySelectorAll('[data-face-sidebar-tab]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const mode = button.getAttribute('data-face-sidebar-tab');
+        const sidebar = button.closest('.face-assignment-sidebar');
+        if (!sidebar) return;
+
+        sidebar.classList.toggle('show-logs', mode === 'logs');
+        sidebar.querySelectorAll('[data-face-sidebar-tab]').forEach(function(tab) {
+          const isActive = tab.getAttribute('data-face-sidebar-tab') === mode;
+          tab.classList.toggle('active', isActive);
+          tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      });
+    });
+
+    if (!boxes.length || !panels.length) return;
+
+    boxes.forEach(function(box) {
+      box.setAttribute('aria-pressed', box.classList.contains('active') ? 'true' : 'false');
+      box.addEventListener('click', function() {
+        activateFace(box.getAttribute('data-face-target'));
+      });
+    });
+
+    const storedTargetId = window.sessionStorage.getItem(selectedFaceKey);
+    const storedBox = storedTargetId && boxes.find(function(box) {
+      return box.getAttribute('data-face-target') === storedTargetId;
+    });
+    const activeBox = storedBox || boxes.find(function(box) {
+      return box.classList.contains('active');
+    });
+    if (activeBox) activateFace(activeBox.getAttribute('data-face-target'));
+  });
+
+  app.registerInitializer('identity-confirmation', function() {
+    document.querySelectorAll('[data-confirm-identity]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const faceId = button.getAttribute('data-confirm-identity');
+        const check = document.querySelector('[data-identity-check="' + faceId + '"]');
+        const cloakSection = document.querySelector('[data-cloak-section="' + faceId + '"]');
+
+        if (check) check.classList.add('is-confirmed');
+        if (cloakSection) cloakSection.classList.remove('is-hidden');
+      });
+    });
+  });
+})(window.FaceCloak, window, document);

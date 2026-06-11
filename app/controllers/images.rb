@@ -12,6 +12,7 @@ module FaceCloak
       routing.on 'faces', String do |face_id|
         routing.on('respond') { route_respond_face(routing, image_id, face_id, auth_token) }
         routing.on('decline') { route_decline_face(routing, image_id, face_id, auth_token) }
+        routing.on('unassign') { route_unassign_face(routing, image_id, face_id, auth_token) }
         routing.post { route_assign_face(routing, image_id, face_id, auth_token) }
       end
     end
@@ -44,6 +45,17 @@ module FaceCloak
       end
     end
 
+    def route_unassign_face(routing, image_id, face_id, auth_token)
+      routing.post do
+        UnassignFace.new(FaceCloak::App.config).call(face_id: face_id, auth_token: auth_token)
+        flash[:notice] = 'Assignment removed'
+        routing.redirect "/images/#{image_id}/raw"
+      rescue StandardError => e
+        flash[:error] = "Could not remove assignment: #{e.message}"
+        routing.redirect "/images/#{image_id}/raw"
+      end
+    end
+
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def route_assign_face(routing, image_id, face_id, auth_token)
       assignment_input = FaceCloak::Form::FaceAssignment.new.call(routing.params)
@@ -61,8 +73,18 @@ module FaceCloak
       end
 
       AssignFace.new(FaceCloak::App.config).call(face_id: face_id, assigned_user_id: uid, auth_token: auth_token)
-      flash[:notice] = 'Face assigned successfully'
-      routing.redirect "/images/#{image_id}/raw"
+      if self_assign && !assignment_input[:cloak_type].to_s.empty?
+        RespondFaceAssignment.new(FaceCloak::App.config).call(
+          face_id: face_id,
+          cloak_type: assignment_input[:cloak_type],
+          auth_token: auth_token
+        )
+        flash[:notice] = 'Masking preference saved'
+        routing.redirect "/images/#{image_id}/protected"
+      else
+        flash[:notice] = 'Face assigned successfully'
+        routing.redirect "/images/#{image_id}/raw"
+      end
     rescue StandardError => e
       flash[:error] = "Could not assign face: #{e.message}"
       routing.redirect "/images/#{image_id}/raw"
@@ -84,6 +106,10 @@ module FaceCloak
       end
 
       routing.on String do |image_id|
+        routing.on 'delete' do
+          routing.post { delete_image_response(routing, image_id, auth_token) }
+        end
+
         %w[protected raw].each do |variant|
           routing.on variant do
             routing.get do
@@ -103,7 +129,11 @@ module FaceCloak
               image_id: image_id,
               auth_token: auth_token
             )
-            view 'images/logs', locals: { image_id: image_id, logs: logs }
+            view 'images/logs', locals: {
+              image_id: image_id,
+              logs: logs,
+              accounts_by_id: log_accounts_by_id(auth_token)
+            }
           rescue StandardError => e
             flash[:error] = "Could not load logs: #{e.message}"
             routing.redirect '/'
@@ -141,6 +171,26 @@ module FaceCloak
         flash[:error] = "Could not post image: #{e.message}"
         routing.redirect '/images/new'
       end
+    end
+
+    private
+
+    def log_accounts_by_id(auth_token)
+      ListAccounts.new(FaceCloak::App.config).call(auth_token: auth_token).to_h do |account|
+        [account['id'].to_s, account['username']]
+      end
+    rescue StandardError => e
+      App.logger.warn "LOG ACCOUNT LOOKUP FAILED: #{e.inspect}"
+      {}
+    end
+
+    def delete_image_response(routing, image_id, auth_token)
+      DeleteImage.new(FaceCloak::App.config).call(image_id: image_id, auth_token: auth_token)
+      flash[:notice] = 'Image deleted'
+      routing.redirect '/'
+    rescue StandardError => e
+      flash[:error] = "Could not delete image: #{e.message}"
+      routing.redirect "/images/#{image_id}/protected"
     end
   end
 end

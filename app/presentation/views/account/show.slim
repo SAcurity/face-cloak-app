@@ -1,18 +1,47 @@
-div class="product-tile tile-white"
+div class="product-tile tile-white" style="padding-top: 40px;"
   div class="container"
-    div class="d-flex align-items-center justify-content-center mb-5"
-      == avatar_for(username, size: 80)
-      div class="ms-4 text-start"
-        h1 class="mb-0" = username
-        p class="text-muted" 
-          b = images.count
+    div class="d-flex align-items-center justify-content-center mb-3 pt-2 pb-3"
+      == avatar_for(username, size: 64)
+      div class="ms-3 text-start"
+        h2 class="h4 mb-0 fw-bold" = username
+        p class="caption text-muted mb-0" 
+          b = owned_images.count
           |  Posts
     
-    div class="profile-grid"
-      - if images.any?
-        - images.each do |img|
-          a href="/images/#{img['id']}" class="grid-item"
-            img src="#{FaceCloak::App.config.API_URL}/images/#{img['id']}"
-      - else
-        div class="col-12 text-center"
-          p class="text-muted" No images posted yet.
+    ul class="nav nav-tabs justify-content-center mb-4 profile-nav-tabs" id="profileTabs" role="tablist"
+      li class="nav-item" role="presentation"
+        button class="nav-link active d-flex align-items-center gap-2" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts-tab-pane" type="button" role="tab" aria-controls="posts-tab-pane" aria-selected="true"
+          i class="fas fa-grid-2" aria-hidden="true"
+          i class="fas fa-images"
+          span My Posts
+      li class="nav-item" role="presentation"
+        button class="nav-link d-flex align-items-center gap-2" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned-tab-pane" type="button" role="tab" aria-controls="assigned-tab-pane" aria-selected="false"
+          i class="fas fa-user-tag"
+          span Assigned to Me
+
+    div class="tab-content" id="profileTabsContent"
+      div class="tab-pane fade show active" id="posts-tab-pane" role="tabpanel" aria-labelledby="posts-tab" tabindex="0"
+        - if owned_images.any?
+          div class="home-feed-grid profile-feed-grid"
+            - owned_images.each do |img|
+              article class="feed-card"
+                a href="/images/#{img.id}" class="feed-card-image-link"
+                  img src="/images/#{img.id}/protected" class="feed-card-image lazy-media" alt="Post thumbnail" loading="lazy" decoding="async"
+        - else
+          div class="text-center py-5 w-100"
+            div class="text-muted"
+              i class="fas fa-camera-retro fa-2x mb-3 d-block opacity-25"
+              p No images posted yet.
+
+      div class="tab-pane fade" id="assigned-tab-pane" role="tabpanel" aria-labelledby="assigned-tab" tabindex="0"
+        - if assigned_images.any?
+          div class="home-feed-grid profile-feed-grid"
+            - assigned_images.each do |img|
+              article class="feed-card"
+                a href="/images/#{img.id}" class="feed-card-image-link"
+                  img src="/images/#{img.id}/protected" class="feed-card-image lazy-media" alt="Assigned image thumbnail" loading="lazy" decoding="async"
+        - else
+          div class="text-center py-5 w-100"
+            div class="text-muted"
+              i class="fas fa-tags fa-2x mb-3 d-block opacity-25"
+              p You have not been assigned to any images.

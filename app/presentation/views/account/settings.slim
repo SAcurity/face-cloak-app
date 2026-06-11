@@ -1,0 +1,116 @@
+- accounts ||= []
+- capabilities ||= {}
+- current_username = @current_account&.username.to_s
+- current_account = accounts.find { |account| account['username'].to_s == current_username } || {}
+- is_admin = capabilities['is_admin'] || capabilities[:is_admin]
+- current_roles = Array(current_account['system_roles'] || current_account['roles']).map(&:to_s)
+- identity = is_admin || current_roles.include?('admin') ? 'Admin' : 'Member'
+
+div class="product-tile tile-white account-settings-page"
+  div class="container account-settings-container"
+    div class="account-settings-header"
+      div
+        p class="caption-strong text-muted text-uppercase mb-1" Account
+        h1 class="account-settings-title" Settings
+
+    ul class="nav nav-tabs settings-tabs" id="accountSettingsTabs" role="tablist"
+      li class="nav-item" role="presentation"
+        button class="nav-link active" id="information-tab" data-bs-toggle="tab" data-bs-target="#information-pane" type="button" role="tab" aria-controls="information-pane" aria-selected="true" Information
+      li class="nav-item" role="presentation"
+        button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab" aria-controls="security-pane" aria-selected="false" Security
+      - if is_admin
+        li class="nav-item" role="presentation"
+          button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-pane" type="button" role="tab" aria-controls="admin-pane" aria-selected="false"
+            span Management
+            span class="admin-only-badge" Admin only
+
+    div class="tab-content settings-tab-content" id="accountSettingsContent"
+      div class="tab-pane fade show active" id="information-pane" role="tabpanel" aria-labelledby="information-tab" tabindex="0"
+        section class="settings-panel"
+          div class="settings-panel-header"
+            div
+              h2 class="settings-panel-title" Account information
+              p class="settings-panel-copy" Basic details and public account name.
+          div class="account-status-list"
+            form action="/account/settings/username" method="post" class="account-status-row settings-status-form"
+              label class="caption text-muted" for="settings-username" Username
+              div class="settings-input-row"
+                input id="settings-username" name="username" type="text" class="form-control" value=FaceCloak::Account.handle_for(current_username) autocomplete="username"
+                button type="submit" class="btn btn-primary settings-action-button" Save
+            div class="account-status-row"
+              span Identity
+              strong = identity
+            div class="account-status-row"
+              span Email
+              strong = current_account['email'].to_s.empty? ? '-' : current_account['email']
+            div class="account-status-row"
+              span Joined
+              strong = current_account['created_at'].to_s.empty? ? '-' : format_time(current_account['created_at'])
+            div class="account-status-row"
+              span Last updated
+              strong = current_account['updated_at'].to_s.empty? ? '-' : format_time(current_account['updated_at'])
+
+      div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0"
+        div class="settings-stack"
+          section class="settings-panel"
+            div class="settings-panel-header"
+              div
+                h2 class="settings-panel-title" Change password
+                p class="settings-panel-copy" Update the password used to sign in.
+            form action="/account/settings/password" method="post" class="settings-form"
+              label class="caption text-muted" for="settings-current-password" Current password
+              input id="settings-current-password" name="current_password" type="password" class="form-control" autocomplete="current-password"
+              label class="caption text-muted mt-2" for="settings-new-password" New password
+              div class="settings-input-row"
+                input id="settings-new-password" name="new_password" type="password" class="form-control" autocomplete="new-password"
+                button type="submit" class="btn btn-primary settings-action-button" Update
+
+          section class="settings-panel settings-danger-panel"
+            div class="settings-danger-zone"
+              div
+                h2 class="settings-danger-title" Delete account
+                p class="settings-panel-copy mb-0" Permanently removes your account and owned uploads.
+              form action="/account/settings/#{current_username}/delete" method="post" class="m-0" data-confirm-message="Delete your account and owned uploads? This cannot be undone."
+                button type="submit" class="danger-outline-button"
+                  i class="fas fa-trash" aria-hidden="true"
+                  span Delete account
+
+      - if is_admin
+        div class="tab-pane fade" id="admin-pane" role="tabpanel" aria-labelledby="admin-tab" tabindex="0"
+          section class="settings-panel account-admin-panel"
+            div class="d-flex align-items-center justify-content-between gap-3 mb-3"
+              div
+                h2 class="settings-panel-title mb-0" Account management
+              span class="caption text-muted" #{accounts.length} accounts
+
+            div class="table-responsive"
+              table class="table account-admin-table mb-0"
+                thead
+                  tr
+                    th Username
+                    th Identity
+                    th Email
+                    th Joined
+                    th Updated
+                    th
+                tbody
+                  - accounts.each do |account|
+                    - username = account['username'].to_s
+                    - roles = Array(account['system_roles'] || account['roles']).map(&:to_s)
+                    - role_label = roles.include?('admin') ? 'Admin' : 'Member'
+                    - can_delete = account.dig('policies', 'can_delete')
+                    tr
+                      td = FaceCloak::Account.handle_for(username)
+                      td
+                        span class="account-role-badge #{role_label == 'Admin' ? 'is-admin' : ''}" = role_label
+                      td = account['email'].to_s.empty? ? '-' : account['email']
+                      td = account['created_at'].to_s.empty? ? '-' : format_time(account['created_at'])
+                      td = account['updated_at'].to_s.empty? ? '-' : format_time(account['updated_at'])
+                      td class="text-end"
+                        - if can_delete
+                          form action="/account/settings/#{username}/delete" method="post" class="m-0" data-confirm-message="Delete #{FaceCloak::Account.handle_for(username)}? This cannot be undone."
+                            button type="submit" class="danger-outline-button danger-outline-button-sm"
+                              i class="fas fa-trash" aria-hidden="true"
+                              span Delete
+                        - else
+                          span class="caption text-muted" -

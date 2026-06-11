@@ -6,7 +6,7 @@ div class="product-tile tile-white"
         p class="lead" Share your moment and manage its privacy.
 
         div class="card mt-5 p-4"
-          form method='post' action='/images' enctype="multipart/form-data"
+          form method='post' action='/images' enctype="multipart/form-data" data-loading-message="Uploading and detecting faces..."
             div class="mb-4"
               label class="form-label text-start d-block" Select Image File
               input type="file" name="file" class="form-control" required="required"

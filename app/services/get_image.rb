@@ -21,10 +21,10 @@ module FaceCloak
     private
 
     def find_image_envelope(image_id, auth_token)
-      public_env = find_in_raw_list(image_id, auth_token: nil)
-      return public_env if public_env
+      auth_env = find_in_raw_list(image_id, auth_token: auth_token) if auth_token
+      return auth_env if auth_env
 
-      find_in_raw_list(image_id, auth_token: auth_token) if auth_token
+      find_in_raw_list(image_id, auth_token: nil)
     end
 
     def find_in_raw_list(image_id, auth_token:)

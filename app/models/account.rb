@@ -43,6 +43,10 @@ module FaceCloak
       attributes&.dig('email')
     end
 
+    def face_assignments
+      @account_info&.dig('include', 'face_assignments') || []
+    end
+
     def capabilities
       @account_info&.dig('capabilities') || {}
     end
