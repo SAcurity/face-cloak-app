@@ -1,12 +1,12 @@
 div class="d-flex flex-column"
-  section class="product-tile tile-parchment" style="padding: 60px 0;"
+  section class="product-tile tile-parchment image-index-search-tile"
     div class="container"
       div class="row justify-content-center"
         div class="col-12 col-md-10 col-lg-8"
           h1 class="display-md mb-3" Public Feed
           p class="lead-airy mb-4" Explore what the community is sharing.
           
-          form action="/images" method="GET" class="w-100" style="max-width: 500px; margin: 0 auto;"
+          form action="/images" method="GET" class="w-100 centered-search-form"
             div class="position-relative"
               input type="text" name="query" placeholder="Filter images..." class="search-input w-100 ps-4 pe-5"
               button type="submit" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3"
@@ -18,7 +18,7 @@ div class="d-flex flex-column"
     - owner_username = img['owner_username'].to_s.strip
     - owner_username = @current_account.username.to_s.strip if owner_username.empty? && owner_is_current
     - owner_handle = image_owner_handle(img, current_account: @current_account, is_owner: owner_is_current)
-    div class="product-tile #{bg_class}" style="padding: 100px 0;"
+    div class="product-tile image-feed-row #{bg_class}"
       div class="container"
         div class="row align-items-center"
           div class="col-lg-6 mb-5 mb-lg-0"
@@ -39,4 +39,4 @@ div class="d-flex flex-column"
           div class="col-lg-6"
             div class="text-center"
               a href="/images/#{img['id']}"
-                img src="#{FaceCloak::App.config.API_URL}/images/#{img['id']}" class="feed-image m-0" alt="Feed image" style="border-radius: 18px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);"
+                img src="#{FaceCloak::App.config.API_URL}/images/#{img['id']}" class="feed-image m-0 image-index-preview" alt="Feed image"

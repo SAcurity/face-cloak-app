@@ -9,7 +9,7 @@ describe 'CheckUsernameAvailability service' do
 
   it 'HAPPY: returns false when username exists' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/search")
-           .with(body: { username: 'alice' }.to_json)
+           .with(body: FaceCloak::SignedMessage.sign({ username: 'alice' }).to_json)
            .to_return(status: 200, body: { attributes: { username: 'alice' } }.to_json)
 
     result = FaceCloak::CheckUsernameAvailability.new(app.config).call(username: 'alice')
@@ -19,7 +19,7 @@ describe 'CheckUsernameAvailability service' do
 
   it 'HAPPY: returns true when username is not found' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/search")
-           .with(body: { username: 'alice' }.to_json)
+           .with(body: FaceCloak::SignedMessage.sign({ username: 'alice' }).to_json)
            .to_return(status: 404, body: { message: 'Account not found' }.to_json)
 
     result = FaceCloak::CheckUsernameAvailability.new(app.config).call(username: '@alice')
@@ -29,7 +29,7 @@ describe 'CheckUsernameAvailability service' do
 
   it 'BAD: raises ApiServerError when API fails' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/search")
-           .with(body: { username: 'alice' }.to_json)
+           .with(body: FaceCloak::SignedMessage.sign({ username: 'alice' }).to_json)
            .to_return(status: 500, body: { message: 'database unavailable' }.to_json)
 
     _(proc {

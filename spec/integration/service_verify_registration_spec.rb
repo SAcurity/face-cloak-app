@@ -15,11 +15,13 @@ describe 'VerifyRegistration service' do
     WebMock.stub_request(:post, "#{API_URL}/auth/register")
            .with do |req|
              body = JSON.parse(req.body)
-             token = body.fetch('verification_url').split('/').last
+             data = body.fetch('data')
+             token = data.fetch('verification_url').split('/').last
              payload = FaceCloak::SecureMessage.new(token).decrypt
 
-             body['email'] == @email &&
-               !body.key?('username') &&
+             data['email'] == @email &&
+               !data.key?('username') &&
+               body['signature'].to_s.length.positive? &&
                payload == { 'email' => @email }
            end
            .to_return(status: 202, body: { message: 'Verification email sent' }.to_json)

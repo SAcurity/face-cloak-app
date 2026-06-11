@@ -25,6 +25,7 @@ gem 'redis', '~>5.0'
 # Security
 gem 'jwt', '~>2.8'
 gem 'rbnacl', '~>7.1'
+gem 'secure_headers'
 
 # Validation
 gem 'dry-validation', '~>1.10'

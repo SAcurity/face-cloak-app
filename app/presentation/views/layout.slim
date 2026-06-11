@@ -6,19 +6,10 @@ html
 
     / Lighter base theme
     link rel="shortcut icon" href="/favicon.ico"
-    link rel="stylesheet" href="https://bootswatch.com/5/lumen/bootstrap.min.css"
+    link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lumen/bootstrap.min.css" integrity="sha384-1r7jbR4WWzO+KjfGhtGGtFwagPiwxiU6El7h18XVVy0sd4Flpfu5Qk/Nq0iVAoU7" crossorigin="anonymous"
 
     / Font Awesome
-    link{
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      rel="stylesheet" 
-    } 
-
-    / Material Symbols
-    link{
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-      rel="stylesheet"
-    }
+    link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous"
 
     / Custom CSS
     == assets(:css)
@@ -40,19 +31,19 @@ html
 
         / Center: Logo
         div class="nav-center mx-auto"
-          a class="navbar-brand text-white fw-bold m-0" href="/" style="font-size: 21px; letter-spacing: -0.5px;" FaceCloak
+          a class="navbar-brand text-white fw-bold m-0 brand-logo" href="/" FaceCloak
 
         / Right: Post & Avatar
         div class="nav-right position-absolute d-flex align-items-center header-edge-offset"
           - if @current_account
             - nav_notifications = assignment_notifications(@current_account)
             - nav_notification_count = nav_notifications.length
-            a href="/images/new?from=header" class="btn btn-primary btn-sm me-3 d-inline-flex align-items-center gap-2" style="border-radius: 999px; padding: 5px 15px;"
-              i class="fas fa-plus" aria-hidden="true"
-              | Upload
+            a href="/images/new?from=header" class="btn btn-primary stable-primary-button nav-upload-button"
+              i class="fas fa-plus stable-button-icon" aria-hidden="true"
+              span class="stable-button-label nav-upload-label" Upload
             a href="/account/#{@current_account.username}?from=header" class="text-decoration-none"
               == avatar_for(@current_account.username, size: 32)
-            div class="notification-menu ms-2"
+            div class="notification-menu"
               button type="button" class="nav-icon-button notification-trigger" title="Notifications" aria-label="Notifications" aria-expanded="false" data-notification-trigger=true
                 i class="fas fa-bell" aria-hidden="true"
                 - if nav_notification_count.positive?
@@ -72,12 +63,12 @@ html
                           small Assigned by #{item[:owner]}
                 - else
                   div class="notification-empty" No pending assignments.
-            a href="/account/settings?from=header" class="nav-icon-button ms-2" title="Account settings" aria-label="Account settings"
+            a href="/account/settings?from=header" class="nav-icon-button" title="Account settings" aria-label="Account settings"
               i class="fas fa-gear" aria-hidden="true"
-            a href="/auth/logout" class="nav-icon-button ms-2" title="Log out" aria-label="Log out"
+            a href="/auth/logout" class="nav-icon-button" title="Log out" aria-label="Log out"
               i class="fas fa-right-from-bracket" aria-hidden="true"
           - else
-            a class="nav-auth-link me-3" href="/auth/register" Register
+            a class="nav-auth-link" href="/auth/register" Register
             a class="nav-auth-login" href="/auth/login" Login
 
     main id="main-content" class=(scrollable_content ? 'is-scrollable' : 'is-contained')
@@ -85,7 +76,7 @@ html
         - if show_back_button
           div class="container pt-4 pb-0 text-start"
             a href="/" class="btn-back-capsule" data-page-back="true"
-              i class="fas fa-chevron-left me-2" style="font-size: 0.8em;"
+              i class="fas fa-chevron-left me-2 back-icon"
               span class="caption-strong text-uppercase" Back
 
         section
@@ -116,6 +107,6 @@ html
           button type="button" class="danger-outline-button confirm-dialog-confirm" data-confirm-submit=true Confirm
 
     / Scripts
-    script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-    script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"
+    script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"
     == assets(:js)

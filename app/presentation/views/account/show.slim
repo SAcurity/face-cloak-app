@@ -1,4 +1,4 @@
-div class="product-tile tile-white" style="padding-top: 40px;"
+div class="product-tile tile-white account-profile-tile"
   div class="container"
     div class="d-flex align-items-center justify-content-center mb-3 pt-2 pb-3"
       == avatar_for(username, size: 64)
@@ -26,7 +26,7 @@ div class="product-tile tile-white" style="padding-top: 40px;"
             - owned_images.each do |img|
               article class="feed-card"
                 a href="/images/#{img.id}" class="feed-card-image-link"
-                  img src="/images/#{img.id}/protected" class="feed-card-image lazy-media" alt="Post thumbnail" loading="lazy" decoding="async"
+                  img src="/images/#{img.id}/cloak" class="feed-card-image lazy-media" alt="Post thumbnail" loading="lazy" decoding="async"
         - else
           div class="text-center py-5 w-100"
             div class="text-muted"
@@ -39,7 +39,7 @@ div class="product-tile tile-white" style="padding-top: 40px;"
             - assigned_images.each do |img|
               article class="feed-card"
                 a href="/images/#{img.id}" class="feed-card-image-link"
-                  img src="/images/#{img.id}/protected" class="feed-card-image lazy-media" alt="Assigned image thumbnail" loading="lazy" decoding="async"
+                  img src="/images/#{img.id}/cloak" class="feed-card-image lazy-media" alt="Assigned image thumbnail" loading="lazy" decoding="async"
         - else
           div class="text-center py-5 w-100"
             div class="text-muted"

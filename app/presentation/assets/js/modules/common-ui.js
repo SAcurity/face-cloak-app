@@ -1,4 +1,14 @@
 (function(app, window, document) {
+  app.registerInitializer('avatars', function() {
+    document.querySelectorAll('.avatar-circle[data-avatar-size]').forEach(function(avatar) {
+      const size = parseInt(avatar.getAttribute('data-avatar-size'), 10) || 40;
+      avatar.style.width = size + 'px';
+      avatar.style.height = size + 'px';
+      avatar.style.backgroundColor = avatar.getAttribute('data-avatar-color') || '#c0392b';
+      avatar.style.fontSize = Math.floor(size / 2) + 'px';
+    });
+  });
+
   app.registerInitializer('flash', function() {
     const flashBar = document.getElementById('flash-bar-container');
     if (!flashBar) return;
@@ -63,7 +73,7 @@
   app.registerInitializer('page-back', function() {
     const previousPageKey = 'facecloak.previousPage';
     const currentPath = window.location.pathname + window.location.search;
-    const imageDetailPattern = /^\/images\/[^/]+\/(?:raw|protected)$/;
+    const imageDetailPattern = /^\/images\/[^/]+\/(?:raw|cloak)$/;
     const isImageDetail = imageDetailPattern.test(window.location.pathname);
     const previousPage = window.sessionStorage.getItem(previousPageKey);
     const validPreviousPage = previousPage && previousPage !== currentPath ? previousPage : '/';

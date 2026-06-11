@@ -6,16 +6,16 @@
 - owner_handle = image_owner_handle(image, current_account: @current_account, is_owner: is_owner)
 - assignment_mode = is_owner && view_type == 'raw'
 - image_src = "/images/#{image.id}/#{view_type}"
-- image_alt = assignment_mode ? 'Original Image' : 'Protected Image'
+- image_alt = assignment_mode ? 'Original Image' : 'Cloaked Image'
 - current_handle = @current_account&.handle.to_s
 - current_username = FaceCloak::Account.normalize_username(current_handle)
 - current_account_id = @current_account&.id.to_s
-- box_faces = faces.select { |face| face_box_style(face, image) }.sort_by { |face| face_box_left(face, image) }
+- box_faces = faces.select { |face| face_box_data(face, image) }.sort_by { |face| face_box_left(face, image) }
 - face_numbers_by_id = {}
 - box_faces.each_with_index { |face, index| face_numbers_by_id[face.id.to_s] = index + 1 }
 - unboxed_faces = faces - box_faces
 - my_assigned_faces = faces.select { |face| face_assigned_to?(face, current_username, current_account_id) || face.policies.can_respond }
-- response_mode = view_type == 'protected' && my_assigned_faces.any?
+- response_mode = view_type == 'cloak' && !is_owner && my_assigned_faces.any?
 - my_assigned_face_ids = my_assigned_faces.map { |face| face.id.to_s }
 - response_box_faces = box_faces.select { |face| my_assigned_face_ids.include?(face.id.to_s) }
 - response_faces = response_box_faces.any? ? response_box_faces : my_assigned_faces
@@ -47,7 +47,7 @@ div class="product-tile tile-white image-detail-page"
       div class="image-detail-actions d-flex align-items-center gap-3"
         - if is_owner
           - if view_type == 'raw'
-            a href="/images/#{image.id}/protected" class="mode-action-button is-done" title="Exit edit mode" aria-label="Exit edit mode"
+            a href="/images/#{image.id}/cloak" class="mode-action-button is-done" title="Exit edit mode" aria-label="Exit edit mode"
               i class="fas fa-check" aria-hidden="true"
               span Done
           - else
@@ -64,7 +64,10 @@ div class="product-tile tile-white image-detail-page"
     - if assignment_mode
       datalist id="username-options" data-username-options=true data-source-url="/account/usernames" data-current-username=current_username data-current-account-id=current_account_id data-account-statuses=account_statuses.to_json
 
-    - overlay_faces = assignment_mode ? box_faces : response_box_faces
+    - if assignment_mode
+      - overlay_faces = box_faces
+    - else
+      - overlay_faces = response_box_faces
     - show_face_overlay = (assignment_mode || response_mode) && overlay_faces.any?
     div class=(assignment_mode || response_mode ? 'image-assignment-layout' : 'image-view-layout')
       div class="image-detail-stage #{show_face_overlay ? 'has-face-overlay' : ''}"
@@ -76,19 +79,21 @@ div class="product-tile tile-white image-detail-page"
               - face_id = face.id.to_s
               - face_number = face_numbers_by_id[face_id] || index + 1
               - panel_id = "face-panel-#{face_id}"
-              button type="button" class="face-box #{face_id == selected_face_id ? 'active' : ''}" style=face_box_style(face, image) data-face-target=panel_id data-face-number=face_number aria-label="Select face #{face_number}"
+              - box_data = face_box_data(face, image)
+              button type="button" class="face-box #{face_id == selected_face_id ? 'active' : ''}" data-box-left=box_data[:left] data-box-top=box_data[:top] data-box-width=box_data[:width] data-box-height=box_data[:height] data-face-target=panel_id data-face-number=face_number aria-label="Select face #{face_number}"
                 span class="face-number-label" = face_number
 
       - if assignment_mode
         aside class="face-assignment-sidebar text-start is-edit-sidebar"
           div class="face-sidebar-header"
-            p class="caption-strong text-muted text-uppercase mb-1" #{faces.length} detected #{faces.length == 1 ? 'face' : 'faces'}
-            h2 class="face-assignment-title mb-0"
-              - if selected_face_number
-                | Selected: Face #
-                span id="selected-face-number" = selected_face_number
-              - else
-                | Face Assignment
+            div class="face-sidebar-heading-row"
+              h2 class="face-assignment-title mb-0"
+                - if selected_face_number
+                  | Selected: Face #
+                  span id="selected-face-number" = selected_face_number
+                - else
+                  | Face Assignment
+              p class="caption-strong text-muted text-uppercase mb-0 face-detected-count" #{faces.length} detected #{faces.length == 1 ? 'face' : 'faces'}
           - if log_faces.any?
             div class="face-sidebar-tabs" role="tablist" aria-label="Face tools"
               button type="button" class="face-sidebar-tab active" data-face-sidebar-tab="assign" aria-pressed="true"
@@ -128,6 +133,7 @@ div class="product-tile tile-white image-detail-page"
                     div class="assign-control-row"
                       - if can_assign
                         form action="/images/#{image.id}/faces/#{face_id}" method="post" class="face-assign-form face-sidebar-form" autocomplete="off"
+                          input type="hidden" name="return_view" value=view_type
                           div class="assign-pill #{assigned ? 'is-assigned' : ''} #{assigned && !show_assign_action ? 'is-responded' : ''}"
                             - if assigned
                               i class="fas fa-lock assign-lock" aria-hidden="true"
@@ -135,6 +141,7 @@ div class="product-tile tile-white image-detail-page"
                             input type="text" class="username-suggest-input" placeholder="@username" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" value=(assigned ? FaceCloak::Account.handle_for(assigned_username) : nil) data-username-suggest=true data-current-username=current_username data-declined-usernames=declined_handles.join(',') readonly=assigned
                             div class="username-suggestion-menu" data-username-menu=true
                             - if show_assign_action
+                              input type="hidden" name="action" value=(assigned ? 'remind' : 'assign')
                               button type="submit" class="face-icon-button #{assign_button_class}" title=assign_button_title aria-label=assign_button_title
                                 i class="fas #{assigned ? 'fa-bell' : 'fa-paper-plane'}" aria-hidden="true"
                         - if !current_handle.empty? && (!assigned || assigned_to_current)
@@ -155,13 +162,14 @@ div class="product-tile tile-white image-detail-page"
                           - face_cloak_options.each do |option|
                             - if assigned_to_current
                               form action="/images/#{image.id}/faces/#{face_id}/respond" method="post" class="cloak-choice-form" data-loading-message="Saving cloak style..."
-                                input type="hidden" name="return_view" value="protected"
+                                input type="hidden" name="return_view" value=view_type
                                 input type="hidden" name="cloak_type" value=option[:value]
                                 button type="submit" class="cloak-choice-button #{active_cloak_type == option[:value] ? 'active' : ''}" title="Use #{option[:label]}" aria-label="Use #{option[:label]}"
                                   i class="fas #{option[:icon]}" aria-hidden="true"
                                   span = option[:label]
                             - else
-                              form action="/images/#{image.id}/faces/#{face_id}" method="post" class="cloak-choice-form"
+                              form action="/images/#{image.id}/faces/#{face_id}" method="post" class="cloak-choice-form" data-loading-message="Applying cloak style..."
+                                input type="hidden" name="return_view" value=view_type
                                 input type="hidden" name="assigned_user_id" value=current_account_id
                                 input type="hidden" name="assign_self" value="true"
                                 input type="hidden" name="cloak_type" value=option[:value]
@@ -193,9 +201,6 @@ div class="product-tile tile-white image-detail-page"
                       div class="face-response-header"
                         span class="caption text-muted d-block" My response
                         span class="face-response-chip #{responded ? 'is-done' : 'is-pending'}" = responded ? 'Responded' : 'Pending'
-                      a href="/images/#{image['id']}/protected" class="face-response-link" title="Edit response in Protected" aria-label="Edit response in Protected"
-                        i class="fas fa-shield-halved" aria-hidden="true"
-                        span Edit in Protected
 
             - if unboxed_faces.any?
               div class="unlocated-face-list"
@@ -225,6 +230,7 @@ div class="product-tile tile-white image-detail-page"
                       div class="assign-control-row"
                         - if can_assign
                           form action="/images/#{image.id}/faces/#{face_id}" method="post" class="face-assign-form face-sidebar-form" autocomplete="off"
+                            input type="hidden" name="return_view" value=view_type
                             div class="assign-pill #{assigned ? 'is-assigned' : ''} #{assigned && !show_assign_action ? 'is-responded' : ''}"
                               - if assigned
                                 i class="fas fa-lock assign-lock" aria-hidden="true"
@@ -232,6 +238,7 @@ div class="product-tile tile-white image-detail-page"
                               input type="text" class="username-suggest-input" placeholder="@username" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" value=(assigned ? FaceCloak::Account.handle_for(assigned_username) : nil) data-username-suggest=true data-current-username=current_username data-declined-usernames=declined_handles.join(',') readonly=assigned
                               div class="username-suggestion-menu" data-username-menu=true
                               - if show_assign_action
+                                input type="hidden" name="action" value=(assigned ? 'remind' : 'assign')
                                 button type="submit" class="face-icon-button #{assign_button_class}" title=assign_button_title aria-label=assign_button_title
                                   i class="fas #{assigned ? 'fa-bell' : 'fa-paper-plane'}" aria-hidden="true"
                           - if !current_handle.empty? && (!assigned || assigned_to_current)
@@ -252,13 +259,14 @@ div class="product-tile tile-white image-detail-page"
                             - face_cloak_options.each do |option|
                               - if assigned_to_current
                                 form action="/images/#{image.id}/faces/#{face_id}/respond" method="post" class="cloak-choice-form" data-loading-message="Saving cloak style..."
-                                  input type="hidden" name="return_view" value="protected"
+                                  input type="hidden" name="return_view" value=view_type
                                   input type="hidden" name="cloak_type" value=option[:value]
                                   button type="submit" class="cloak-choice-button #{active_cloak_type == option[:value] ? 'active' : ''}" title="Use #{option[:label]}" aria-label="Use #{option[:label]}"
                                     i class="fas #{option[:icon]}" aria-hidden="true"
                                     span = option[:label]
                               - else
-                                form action="/images/#{image.id}/faces/#{face_id}" method="post" class="cloak-choice-form"
+                                form action="/images/#{image.id}/faces/#{face_id}" method="post" class="cloak-choice-form" data-loading-message="Applying cloak style..."
+                                  input type="hidden" name="return_view" value=view_type
                                   input type="hidden" name="assigned_user_id" value=current_account_id
                                   input type="hidden" name="assign_self" value="true"
                                   input type="hidden" name="cloak_type" value=option[:value]
@@ -289,9 +297,6 @@ div class="product-tile tile-white image-detail-page"
                         div class="face-response-header"
                           span class="caption text-muted d-block" My response
                           span class="face-response-chip #{responded ? 'is-done' : 'is-pending'}" = responded ? 'Responded' : 'Pending'
-                        a href="/images/#{image.id}/protected" class="face-response-link" title="Edit response in Protected" aria-label="Edit response in Protected"
-                          i class="fas fa-shield-halved" aria-hidden="true"
-                          span Edit in Protected
           - else
             div class="face-empty-state"
               p class="lead-airy text-muted m-0" No faces detected in this image.
@@ -380,7 +385,7 @@ div class="product-tile tile-white image-detail-page"
                           i class="fas fa-check" aria-hidden="true"
                           span Yes, it's me
                         form action="/images/#{image.id}/faces/#{face_id}/decline" method="post" class="decline-assignment-form m-0" data-loading-message="Declining assignment..."
-                          input type="hidden" name="return_view" value="protected"
+                          input type="hidden" name="return_view" value=view_type
                           button type="submit" class="decline-assignment-button" title="Decline assignment" aria-label="Decline assignment"
                             i class="fas fa-ban" aria-hidden="true"
                             span Decline
@@ -389,7 +394,7 @@ div class="product-tile tile-white image-detail-page"
                     div class="cloak-choice-grid"
                       - face_cloak_options.each do |option|
                         form action="/images/#{image.id}/faces/#{face_id}/respond" method="post" class="cloak-choice-form" data-loading-message="Saving cloak style..."
-                          input type="hidden" name="return_view" value="protected"
+                          input type="hidden" name="return_view" value=view_type
                           input type="hidden" name="cloak_type" value=option[:value]
                           button type="submit" class="cloak-choice-button #{active_cloak_type == option[:value] ? 'active' : ''}" title="Use #{option[:label]}" aria-label="Use #{option[:label]}"
                             i class="fas #{option[:icon]}" aria-hidden="true"

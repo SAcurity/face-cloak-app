@@ -23,8 +23,8 @@ module FaceCloak
       return "Image #{image_id} not found in API" unless image_data
 
       can_manage_faces = manageable_image?(image_data, @current_account)
-      canonical_view = requested_view || 'protected'
-      canonical_view = 'protected' if canonical_view == 'raw' && !can_manage_faces
+      canonical_view = requested_view || 'cloak'
+      canonical_view = 'cloak' if canonical_view == 'raw' && !can_manage_faces
 
       routing.redirect "/images/#{image_id}/#{canonical_view}"
     end
@@ -34,14 +34,14 @@ module FaceCloak
       return "Image #{image_id} not found in API" unless image_data
 
       can_manage_faces = manageable_image?(image_data, @current_account)
-      routing.redirect "/images/#{image_id}/protected" if view_type == 'raw' && !can_manage_faces
+      routing.redirect "/images/#{image_id}/cloak" if view_type == 'raw' && !can_manage_faces
 
       view 'images/show', locals: image_detail_locals(image_data, image_id, auth_token, can_manage_faces, view_type)
     end
 
     def safe_image_return_view(params)
       return_view = params['return_view'].to_s
-      %w[raw protected].include?(return_view) ? return_view : 'protected'
+      %w[raw cloak].include?(return_view) ? return_view : 'cloak'
     end
 
     def find_image_or_not_found(image_id, auth_token)

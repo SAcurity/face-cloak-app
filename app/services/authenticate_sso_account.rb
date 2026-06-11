@@ -24,11 +24,12 @@ module FaceCloak
     private
 
     def sso_response(provider, id_token, jwks)
-      @client.post('/auth/sso', {
-                     provider: provider,
-                     id_token: id_token,
-                     jwks: jwks
-                   })
+      payload = {
+        provider: provider,
+        id_token: id_token,
+        jwks: jwks
+      }
+      @client.post('/auth/sso', SignedMessage.sign(payload))
     end
 
     def validate_payload!(provider, id_token, jwks)

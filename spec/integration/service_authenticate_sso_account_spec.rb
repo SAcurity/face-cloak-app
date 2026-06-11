@@ -28,7 +28,7 @@ describe 'AuthenticateSsoAccount service' do
 
   it 'HAPPY: posts Google SSO payload to the API' do
     WebMock.stub_request(:post, "#{API_URL}/auth/sso")
-           .with(body: @payload.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@payload).to_json)
            .to_return(status: 200, body: @api_response.to_json, headers: { 'content-type' => 'application/json' })
 
     account = FaceCloak::AuthenticateSsoAccount.new(app.config).call(**@payload)
@@ -39,7 +39,7 @@ describe 'AuthenticateSsoAccount service' do
 
   it 'SAD: raises UnauthorizedError on rejected SSO payload' do
     WebMock.stub_request(:post, "#{API_URL}/auth/sso")
-           .with(body: @payload.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@payload).to_json)
            .to_return(status: 403, body: { message: 'Invalid SSO token' }.to_json)
 
     _(proc {

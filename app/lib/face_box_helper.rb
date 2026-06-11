@@ -13,14 +13,14 @@ module FaceCloak
     IMAGE_WIDTH_KEYS = %w[width image_width original_width].freeze
     IMAGE_HEIGHT_KEYS = %w[height image_height original_height].freeze
 
-    def face_box_style(face, image)
+    def face_box_data(face, image)
       box = face_box(face)
       return nil unless box
 
       normalized = normalize_box(box, image)
       return nil unless normalized
 
-      box_style(normalized)
+      box_data(normalized)
     end
 
     private
@@ -120,15 +120,15 @@ module FaceCloak
       [x, y, width, height]
     end
 
-    def box_style(box)
+    def box_data(box)
       x, y, width, height = box
 
-      [
-        "left: #{format('%.4f', x)}%",
-        "top: #{format('%.4f', y)}%",
-        "width: #{format('%.4f', width)}%",
-        "height: #{format('%.4f', height)}%"
-      ].join('; ')
+      {
+        left: format('%.4f', x),
+        top: format('%.4f', y),
+        width: format('%.4f', width),
+        height: format('%.4f', height)
+      }
     end
   end
 end

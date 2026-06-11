@@ -42,7 +42,7 @@ module FaceCloak
         face_id: assignment['face_id'].to_s,
         face_number: index + 1,
         owner: assignment_owner_label(assignment),
-        path: "/images/#{assignment['image_id']}/protected"
+        path: "/images/#{assignment['image_id']}/cloak"
       }
     end
 
@@ -84,7 +84,7 @@ module FaceCloak
         face_id: face.id.to_s,
         face_number: index + 1,
         owner: owner.empty? ? 'Someone' : owner,
-        path: "/images/#{image.id}/protected"
+        path: "/images/#{image.id}/cloak"
       }
     end
   end

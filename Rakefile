@@ -65,6 +65,16 @@ namespace :newkey do
     require './app/lib/secure_message'
     puts "New MSG_KEY (base64): #{FaceCloak::SecureMessage.generate_key}"
   end
+
+  desc 'Create Ed25519 signing keypair for signed client requests'
+  task :signing do
+    require 'base64'
+    require 'rbnacl'
+
+    signing_key = RbNaCl::SigningKey.generate
+    puts "SIGNING_KEY (app only): #{Base64.strict_encode64(signing_key.to_bytes)}"
+    puts "VERIFY_KEY (API only): #{Base64.strict_encode64(signing_key.verify_key.to_bytes)}"
+  end
 end
 
 namespace :session do

@@ -11,7 +11,8 @@ module FaceCloak
 
     def call(email:, username:, password:)
       username = Account.normalize_username(username)
-      @client.post('/accounts', { email:, username:, password: })
+      account = { email: email, username: username, password: password }
+      @client.post('/accounts', SignedMessage.sign(account))
     rescue ApiClient::ApiError => e
       raise InvalidAccount, e.message
     end
