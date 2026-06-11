@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'securerandom'
 require 'roda'
 require_relative 'app'
 
@@ -129,11 +130,106 @@ module FaceCloak
     # rubocop:enable Metrics/AbcSize
   end
 
+  # Routes for Google OAuth/OIDC SSO.
+  module AuthSsoRoute
+    GOOGLE_SSO_STATE_KEY = :google_sso_state
+
+    private
+
+    def route_sso(routing)
+      routing.on 'sso' do
+        routing.on 'google' do
+          # GET /auth/sso/google
+          routing.is { routing.get { start_google_sso(routing) } }
+          # GET /auth/sso/google/callback
+          routing.is('callback') { routing.get { complete_google_sso(routing) } }
+        end
+      end
+    end
+
+    def start_google_sso(routing)
+      state = SecureRandom.urlsafe_base64(32)
+      secure_session.set(GOOGLE_SSO_STATE_KEY, state)
+      routing.redirect GoogleOauthClient.new(App.config).authorization_url(state: state)
+    rescue GoogleOauthClient::OAuthError => e
+      App.logger.warn "GOOGLE SSO START FAILED: #{e.message}"
+      flash[:error] = 'Could not start Google sign-in'
+      routing.redirect @login_route
+    end
+
+    def complete_google_sso(routing)
+      return google_sso_denied(routing) if routing.params['error']
+      return google_sso_state_failed(routing) unless valid_google_sso_state?(routing.params['state'])
+
+      finish_google_sso(routing, google_sso_account(routing.params['code'].to_s))
+    rescue GoogleOauthClient::OAuthError, AuthenticateSsoAccount::UnauthorizedError => e
+      google_sso_auth_failed(routing, e)
+    rescue AuthenticateSsoAccount::ApiServerError => e
+      google_sso_api_failed(routing, e)
+    end
+
+    def google_sso_account(code)
+      oauth = GoogleOauthClient.new(App.config)
+      AuthenticateSsoAccount.new(App.config).call(
+        provider: 'google',
+        id_token: oauth.exchange_code(code: code),
+        jwks: oauth.jwks
+      )
+    end
+
+    def finish_google_sso(routing, account)
+      secure_session.delete(GOOGLE_SSO_STATE_KEY)
+      CurrentSession.new(session).current_account = account
+      flash[:notice] = "Welcome back #{account.handle}!"
+      routing.redirect '/'
+    end
+
+    def google_sso_auth_failed(routing, error)
+      App.logger.warn "GOOGLE SSO FAILED: #{error.message}"
+      secure_session.delete(GOOGLE_SSO_STATE_KEY)
+      flash[:error] = 'Google sign-in failed'
+      routing.redirect @login_route
+    end
+
+    def google_sso_api_failed(routing, error)
+      App.logger.warn "API server error: #{error.inspect}"
+      secure_session.delete(GOOGLE_SSO_STATE_KEY)
+      flash[:error] = 'Our servers are not responding -- please try later'
+      routing.redirect @login_route
+    end
+
+    def google_sso_denied(routing)
+      secure_session.delete(GOOGLE_SSO_STATE_KEY)
+      flash[:error] = 'Google sign-in was cancelled'
+      routing.redirect @login_route
+    end
+
+    def google_sso_state_failed(routing)
+      App.logger.warn 'GOOGLE SSO STATE MISMATCH'
+      secure_session.delete(GOOGLE_SSO_STATE_KEY)
+      flash[:error] = 'Google sign-in failed'
+      routing.redirect @login_route
+    end
+
+    def valid_google_sso_state?(actual_state)
+      expected_state = secure_session.get(GOOGLE_SSO_STATE_KEY).to_s
+      return false if expected_state.empty? || actual_state.to_s.empty?
+      return false unless expected_state.bytesize == actual_state.to_s.bytesize
+
+      Rack::Utils.secure_compare(expected_state, actual_state.to_s)
+    end
+
+    def secure_session
+      SecureSession.new(session)
+    end
+  end
+
   # Web controller for the FaceCloak Web App
   class App < Roda
     include RegistrationFlowState
     include AuthUsernameAvailabilityRoute
     include AuthRegistrationRoute
+    include AuthSsoRoute
 
     route('auth') do |routing|
       @login_route = '/auth/login'
@@ -190,6 +286,7 @@ module FaceCloak
         end
       end
 
+      route_sso(routing)
       route_username_availability(routing)
 
       routing.is 'email_verification' do

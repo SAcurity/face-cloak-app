@@ -23,6 +23,7 @@ gem 'http', '~>5.1'
 gem 'redis', '~>5.0'
 
 # Security
+gem 'jwt', '~>2.8'
 gem 'rbnacl', '~>7.1'
 
 # Validation
