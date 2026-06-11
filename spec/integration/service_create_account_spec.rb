@@ -14,7 +14,7 @@ describe 'CreateAccount service' do
   it 'HAPPY: posts registration data to the API' do
     response = { message: 'Account created', data: { attributes: { username: 'new_user' } } }
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: @account.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@account).to_json)
            .to_return(status: 201, body: response.to_json, headers: { 'content-type' => 'application/json' })
 
     result = FaceCloak::CreateAccount.new(app.config).call(**@account)
@@ -24,7 +24,7 @@ describe 'CreateAccount service' do
 
   it 'SAD: raises InvalidAccount on API validation error' do
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: @account.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@account).to_json)
            .to_return(status: 400, body: { message: 'Username or email already exists' }.to_json)
 
     _(proc {

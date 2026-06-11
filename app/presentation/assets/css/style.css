@@ -68,6 +68,40 @@ body {
   color: #adb5bd;
 }
 
+.brand-logo {
+  font-size: 21px;
+}
+
+.back-icon {
+  font-size: 0.8em;
+}
+
+.search-form-narrow,
+.centered-search-form {
+  max-width: 500px;
+}
+
+.centered-search-form {
+  margin: 0 auto;
+}
+
+.account-profile-tile {
+  padding-top: 40px;
+}
+
+.image-index-search-tile {
+  padding: 60px 0;
+}
+
+.image-feed-row {
+  padding: 100px 0;
+}
+
+.image-index-preview {
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
 .auth-page {
   min-height: 100%;
   padding-top: clamp(4.5rem, 12vh, 8rem);
@@ -758,6 +792,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 
 .nav-right.header-edge-offset {
   right: 1rem;
+  gap: 8px;
 }
 
 .home-nav-pill {
@@ -1013,6 +1048,105 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   outline: none;
 }
 
+.stable-primary-button,
+.stable-primary-button:hover,
+.stable-primary-button:focus,
+.stable-primary-button:active {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: static !important;
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+  border: 1px solid var(--color-primary) !important;
+  border-radius: 9999px !important;
+  font-size: 17px !important;
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  transform: translate(0, 0) !important;
+  translate: 0 0 !important;
+  scale: 1 !important;
+  rotate: 0deg !important;
+  margin: 0 !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  transition: background-color 0.16s ease !important;
+  vertical-align: top !important;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease !important;
+}
+
+.stable-primary-button:hover,
+.stable-primary-button:focus,
+.stable-primary-button:active {
+  background-color: var(--color-primary-focus) !important;
+  border-color: var(--color-primary) !important;
+  outline: none !important;
+}
+
+.stable-button-icon,
+.stable-button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+  text-transform: inherit;
+  transform: none;
+}
+
+.nav-upload-button,
+.nav-upload-button:hover,
+.nav-upload-button:focus,
+.nav-upload-button:active {
+  gap: 8px !important;
+  width: auto !important;
+  min-width: 102px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 15px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.nav-upload-button .stable-button-icon {
+  width: 14px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.nav-upload-label {
+  width: 55px;
+}
+
+.image-post-button,
+.image-post-button:hover,
+.image-post-button:focus,
+.image-post-button:active {
+  height: 48px !important;
+  min-height: 48px !important;
+  padding: 0 20px !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.image-post-label {
+  width: auto;
+  max-width: 100%;
+}
+
 .btn-secondary-pill {
   background-color: var(--color-canvas);
   color: var(--color-primary);
@@ -1063,7 +1197,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.segmented-control.is-protected .segmented-indicator {
+.segmented-control.is-cloak .segmented-indicator {
   transform: translateX(0);
 }
 
@@ -1452,7 +1586,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 .image-assignment-layout {
   display: grid;
   grid-template-columns: auto minmax(520px, 580px);
-  align-items: start;
+  align-items: stretch; /* make image and sidebar equal height */
   column-gap: 24px;
   row-gap: 24px;
   justify-content: center;
@@ -1467,6 +1601,10 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 .image-assignment-layout .face-assignment-sidebar {
   justify-self: start;
   width: 100%;
+  display: flex;
+  flex-direction: column; /* keep header fixed and let panels scroll */
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .image-assignment-layout .image-detail-image {
@@ -1536,10 +1674,34 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   box-sizing: border-box;
 }
 
+/* When editing, let the sidebar stretch to match the image height and
+   make the interior panels the scrollable area while keeping header/tabs fixed. */
 .face-assignment-sidebar.is-edit-sidebar {
-  height: min(68vh, 720px);
-  min-height: 540px;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.face-assignment-sidebar .face-sidebar-header,
+.face-assignment-sidebar .face-sidebar-tabs {
+  z-index: 2;
+}
+
+.face-assignment-sidebar .face-side-panels {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 6px; /* allow space for scrollbar */
+}
+
+.face-sidebar-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.face-detected-count {
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 .face-sidebar-header {
@@ -2094,6 +2256,11 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   margin: 0;
 }
 
+.cloak-choice-form.is-submitting .cloak-choice-button {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .cloak-choice-button {
   display: inline-flex;
   align-items: center;
@@ -2573,8 +2740,13 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background-color: #c0392b;
   color: white;
+  font-size: 20px;
   font-weight: 600;
   overflow: hidden;
   text-decoration: none;
@@ -3028,9 +3200,8 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   }
 
   .face-assignment-sidebar.is-edit-sidebar {
-    height: auto;
     min-height: 0;
-    overflow-y: visible;
+    overflow-y: auto;
   }
 
   .face-panel-grid {

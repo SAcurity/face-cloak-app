@@ -73,16 +73,16 @@ module FaceCloak
       end
 
       AssignFace.new(FaceCloak::App.config).call(face_id: face_id, assigned_user_id: uid, auth_token: auth_token)
-      if self_assign && !assignment_input[:cloak_type].to_s.empty?
+        if self_assign && !assignment_input[:cloak_type].to_s.empty?
         RespondFaceAssignment.new(FaceCloak::App.config).call(
           face_id: face_id,
           cloak_type: assignment_input[:cloak_type],
           auth_token: auth_token
         )
         flash[:notice] = 'Masking preference saved'
-        routing.redirect "/images/#{image_id}/protected"
+          routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
       else
-        flash[:notice] = 'Face assigned successfully'
+        flash[:notice] = routing.params['action'] == 'remind' ? 'Notification sent' : 'Face assigned successfully'
         routing.redirect "/images/#{image_id}/raw"
       end
     rescue StandardError => e
@@ -110,7 +110,7 @@ module FaceCloak
           routing.post { delete_image_response(routing, image_id, auth_token) }
         end
 
-        %w[protected raw].each do |variant|
+        %w[cloak raw].each do |variant|
           routing.on variant do
             routing.get do
               if image_asset_request?
@@ -146,7 +146,7 @@ module FaceCloak
         routing.is do
           routing.get do
             requested_view = routing.params['view'].to_s
-            requested_view = nil unless %w[protected raw].include?(requested_view)
+            requested_view = nil unless %w[cloak raw].include?(requested_view)
             image_detail_redirect(routing, image_id, requested_view, auth_token)
           end
         end
@@ -190,7 +190,7 @@ module FaceCloak
       routing.redirect '/'
     rescue StandardError => e
       flash[:error] = "Could not delete image: #{e.message}"
-      routing.redirect "/images/#{image_id}/protected"
+      routing.redirect "/images/#{image_id}/cloak"
     end
   end
 end

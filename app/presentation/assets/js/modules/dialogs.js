@@ -55,6 +55,12 @@
   app.registerInitializer('submit-loading', function() {
     document.querySelectorAll('form[data-loading-message]').forEach(function(form) {
       form.addEventListener('submit', function() {
+        form.classList.add('is-submitting');
+        form.setAttribute('aria-busy', 'true');
+        form.querySelectorAll('button, input[type="submit"]').forEach(function(control) {
+          control.disabled = true;
+        });
+
         const overlay = document.getElementById('global-loading-overlay');
         if (!overlay) return;
 

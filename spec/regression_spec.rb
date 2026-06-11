@@ -62,3 +62,41 @@ describe 'Regression: SSO-only accounts do not show password form' do
     _(source).must_match(/if can_change_password/)
   end
 end
+
+describe 'Regression: CSP-compatible presentation source' do
+  let(:view_sources) do
+    Dir[File.expand_path('../app/presentation/views/**/*.slim', __dir__)].to_h do |path|
+      [path, File.read(path, mode: 'r:BOM|UTF-8')]
+    end
+  end
+
+  it 'views do not use inline javascript blocks' do
+    offenders = view_sources.select { |_path, source| source.match?(/^\s*javascript:/) }
+
+    _(offenders.keys).must_equal []
+  end
+
+  it 'views do not use inline style attributes' do
+    offenders = view_sources.select { |_path, source| source.include?('style=') }
+
+    _(offenders.keys).must_equal []
+  end
+
+  it 'layout gives every third-party asset an SRI hash' do
+    layout = File.read(File.expand_path('../app/presentation/views/layout.slim', __dir__))
+    third_party_asset_lines = layout.lines.select { |line| line.include?('https://') }
+
+    _(third_party_asset_lines).wont_be_empty
+    third_party_asset_lines.each do |line|
+      _(line).must_include 'integrity="sha384-'
+      _(line).must_include 'crossorigin="anonymous"'
+    end
+  end
+
+  it 'layout does not load dynamic Google Fonts CSS' do
+    layout = File.read(File.expand_path('../app/presentation/views/layout.slim', __dir__))
+
+    _(layout).wont_match(/fonts\.googleapis\.com/)
+    _(layout).wont_match(/Material Symbols/)
+  end
+end

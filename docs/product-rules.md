@@ -9,7 +9,7 @@ This file records agreed product behavior so UI/API changes stay consistent.
 - `can_view_raw` should not be used as a separate product permission.
 - Delete permission alone must not imply edit/raw access.
 - The frontend should tolerate missing `can_manage_faces` by falling back to owner/admin identity.
-- Edit mode is an enter/confirm/exit flow: protected view shows `Edit mode`, raw edit view shows `Done`.
+- Edit mode is an enter/confirm/exit flow: cloak view shows `Edit mode`, raw edit view shows `Done`.
 
 ## Face assignment
 

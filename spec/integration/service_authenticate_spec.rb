@@ -25,7 +25,7 @@ describe 'AuthenticateAccount service' do
       }
     }
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
-           .with(body: @api_credentials.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@api_credentials).to_json)
            .to_return(status: 200, body: response.to_json, headers: { 'content-type' => 'application/json' })
 
     result = FaceCloak::AuthenticateAccount.new(app.config).call(**@credentials)
@@ -36,7 +36,7 @@ describe 'AuthenticateAccount service' do
 
   it 'SAD: raises UnauthorizedError on invalid credentials' do
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
-           .with(body: @api_credentials.to_json)
+           .with(body: FaceCloak::SignedMessage.sign(@api_credentials).to_json)
            .to_return(status: 403, body: { message: 'Invalid credentials' }.to_json)
 
     _(proc {

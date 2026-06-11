@@ -1,5 +1,7 @@
 (function(app, window, document) {
   app.registerInitializer('face-assignment', function() {
+    applyFaceBoxGeometry();
+
     const boxes = Array.from(document.querySelectorAll('.face-box[data-face-target]'));
     const panels = Array.from(document.querySelectorAll('[data-face-panel]'));
     const logPanels = Array.from(document.querySelectorAll('[data-face-log-panel]'));
@@ -10,6 +12,34 @@
     const accountStatuses = parseAccountStatuses();
     const selectedFaceKey = 'facecloak.selectedFace:' + window.location.pathname;
     let usernamesLoaded = false;
+    let accountsCache = [];
+
+    function applyFaceBoxGeometry() {
+      const img = document.querySelector('.image-detail-image');
+      const overlay = document.querySelector('.face-overlay');
+      if (img && overlay) {
+        // The stage is sized to the rendered image. Keep the overlay on that
+        // same origin so percentage face coordinates do not drift vertically.
+        overlay.style.position = 'absolute';
+        overlay.style.left = '0';
+        overlay.style.top = '0';
+        overlay.style.width = img.offsetWidth + 'px';
+        overlay.style.height = img.offsetHeight + 'px';
+      }
+
+      if (img && img.offsetHeight > 0) {
+        document.querySelectorAll('.image-assignment-layout .face-assignment-sidebar').forEach(function(sidebar) {
+          sidebar.style.height = img.offsetHeight + 'px';
+        });
+      }
+
+      document.querySelectorAll('.face-box[data-box-left]').forEach(function(box) {
+        box.style.left = box.getAttribute('data-box-left') + '%';
+        box.style.top = box.getAttribute('data-box-top') + '%';
+        box.style.width = box.getAttribute('data-box-width') + '%';
+        box.style.height = box.getAttribute('data-box-height') + '%';
+      });
+    }
 
     function normalizedUsername(value) {
       return (value || '').trim().replace(/^@+/, '').toLowerCase();
@@ -29,7 +59,11 @@
     }
 
     function populateAccounts(accounts) {
-      if (!usernameOptions || !Array.isArray(accounts)) return;
+      if (!Array.isArray(accounts)) return;
+      // store into a local cache for cases where the datalist is not present
+      accountsCache = accounts.filter(function(account) { return account && account.id; });
+
+      if (!usernameOptions) return;
 
       const existing = new Set(
         Array.from(usernameOptions.querySelectorAll('option')).map(function(option) {
@@ -51,18 +85,30 @@
     }
 
     function accountOptions() {
-      if (!usernameOptions) return [];
-      return Array.from(usernameOptions.querySelectorAll('option'))
-        .map(function(option) {
+      if (usernameOptions) {
+        return Array.from(usernameOptions.querySelectorAll('option'))
+          .map(function(option) {
+            return {
+              id: option.getAttribute('data-account-id'),
+              handle: option.value,
+              status: option.getAttribute('data-account-status') || ''
+            };
+          })
+          .filter(function(account) {
+            return account.id && normalizedUsername(account.handle) !== currentUsername;
+          });
+      }
+
+      // fallback to cached accounts if datalist not present
+      return accountsCache
+        .map(function(account) {
           return {
-            id: option.getAttribute('data-account-id'),
-            handle: option.value,
-            status: option.getAttribute('data-account-status') || ''
+            id: account.id,
+            handle: account.handle || ('@' + account.username),
+            status: account.status || ''
           };
         })
-        .filter(function(account) {
-          return account.id && normalizedUsername(account.handle) !== currentUsername;
-        });
+        .filter(function(account) { return account.id && normalizedUsername(account.handle) !== currentUsername; });
     }
 
     function renderSuggestions(input) {
@@ -208,9 +254,8 @@
     function loadUsernames() {
       if (!usernameOptions || usernamesLoaded) return;
       usernamesLoaded = true;
-
-      const sourceUrl = usernameOptions.getAttribute('data-source-url');
-      if (!sourceUrl) return;
+      var sourceUrl = usernameOptions.getAttribute('data-source-url');
+      if (!sourceUrl) sourceUrl = '/account/usernames';
 
       window.fetch(sourceUrl, { headers: { Accept: 'application/json' } })
         .then(function(response) {
@@ -321,17 +366,11 @@
           .filter(Boolean);
       }
 
-      input.addEventListener('input', function() {
-        clearAssignmentError(form);
-        if (hiddenInput) hiddenInput.value = '';
-      });
-
       form.addEventListener('submit', function(e) {
-        storeActiveFace();
         const username = normalizedUsername(input.value);
-        const selfUsername = normalizedUsername(input.getAttribute('data-current-username')) || currentUsername;
+        clearAssignmentError(form);
 
-        if (username && username === selfUsername) {
+        if (String(hiddenInput && hiddenInput.value) === String(currentAccountId)) {
           setAssignmentError(form, 'Use Myself to assign your own face.');
           e.preventDefault();
           return;
@@ -386,6 +425,13 @@
       return box.classList.contains('active');
     });
     if (activeBox) activateFace(activeBox.getAttribute('data-face-target'));
+
+    // Recompute overlay/box geometry when the image loads or the window resizes.
+    const detailImage = document.querySelector('.image-detail-image');
+    if (detailImage) {
+      detailImage.addEventListener('load', applyFaceBoxGeometry);
+    }
+    window.addEventListener('resize', function() { window.requestAnimationFrame(applyFaceBoxGeometry); });
   });
 
   app.registerInitializer('identity-confirmation', function() {

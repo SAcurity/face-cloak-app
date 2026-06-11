@@ -6,9 +6,10 @@ div class="product-tile tile-white"
         p class="lead" Share your moment and manage its privacy.
 
         div class="card mt-5 p-4"
-          form method='post' action='/images' enctype="multipart/form-data" data-loading-message="Uploading and detecting faces..."
+          form method='post' action='/images' enctype="multipart/form-data" data-loading-message="Uploading & Detecting faces..."
             div class="mb-4"
               label class="form-label text-start d-block" Select Image File
               input type="file" name="file" class="form-control" required="required"
             
-            button type="submit" class="btn btn-primary w-100 py-3" Post to FaceCloak
+            button type="submit" class="btn btn-primary stable-primary-button image-post-button w-100"
+              span class="stable-button-label image-post-label" UPLOAD

@@ -15,7 +15,7 @@
                 a href="/account/#{owner_username}" class="feed-card-username" = owner_handle
               div class="feed-card-time" = image_upload_time_label(image, logs: image.logs)
           a href="/images/#{image.id}" class="feed-card-image-link"
-            img src="/images/#{image.id}/protected" class="feed-card-image lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
+            img src="/images/#{image.id}/cloak" class="feed-card-image lazy-media" alt="Uploaded image" loading="lazy" decoding="async"
 - else
   div class="container py-5 text-center"
     div class="product-tile tile-white rounded-lg border"

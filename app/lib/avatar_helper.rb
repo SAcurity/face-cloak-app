@@ -7,22 +7,12 @@ module FaceCloak
       normalized = Account.normalize_username(username)
       initial = normalized[0]&.upcase || '?'
 
-      "<div class='avatar-circle' style='#{avatar_style(normalized, size)};'>
+      "<div class='avatar-circle' data-avatar-size='#{size}' data-avatar-color='#{color_for(normalized)}'>
         #{initial}
       </div>"
     end
 
     private
-
-    def avatar_style(username, size)
-      [
-        "width: #{size}px",
-        "height: #{size}px",
-        "background-color: #{color_for(username)} !important",
-        "font-size: #{size / 2}px",
-        'border: 1px solid rgba(255,255,255,0.12)'
-      ].join('; ')
-    end
 
     def color_for(username)
       first = username.to_s[0]&.upcase

@@ -69,8 +69,8 @@ module FaceCloak
     end
 
     def face_box_left(face, image)
-      style = face_box_style(face, image)
-      style ? style[/left: ([\d.]+)%/, 1].to_f : 0
+      data = face_box_data(face, image)
+      data ? data[:left].to_f : 0
     end
 
     def face_latest_update_label(face)

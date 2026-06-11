@@ -8,6 +8,7 @@ require 'rack/session'
 require 'rack/session/redis'
 require './app/lib/secure_message'
 require './app/lib/secure_session'
+require './app/lib/signed_message'
 require_relative '../require_app'
 
 module FaceCloak
@@ -47,13 +48,16 @@ module FaceCloak
       end
 
     SecureMessage.setup(ENV.delete('MSG_KEY') || config.MSG_KEY)
+    SignedMessage.setup(ENV.delete('SIGNING_KEY') || config.SIGNING_KEY)
     SecureSession.setup(@redis_server) # used by `rake session:wipe`
 
     configure :development, :test do
       logger.level = Logger::ERROR
 
       use Rack::Session::Pool,
-          expire_after: ONE_MONTH
+          expire_after: ONE_MONTH,
+          httponly: true,
+          same_site: :lax
 
       require 'pry'
 
@@ -69,7 +73,10 @@ module FaceCloak
 
       use Rack::Session::Redis,
           expire_after: ONE_MONTH,
-          redis_server: @redis_server
+          redis_server: @redis_server,
+          secure: true,
+          httponly: true,
+          same_site: :lax
     end
   end
 end

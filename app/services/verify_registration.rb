@@ -18,7 +18,7 @@ module FaceCloak
         verification_url: "#{@config.APP_URL}/auth/register/#{token}"
       }
 
-      @client.post('/auth/register', registration)
+      @client.post('/auth/register', SignedMessage.sign(registration))
       registration
     rescue ApiClient::ApiError => e
       raise ApiServerError, e.message if e.status >= 500

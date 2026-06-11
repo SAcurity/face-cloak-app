@@ -17,7 +17,7 @@ module FaceCloak
 
       # Use the new search endpoint logic: find account by username
       # If found (200 OK), then the username is NOT available (taken)
-      @client.post('/accounts/search', { username: username })
+      @client.post('/accounts/search', SignedMessage.sign({ username: username }))
       false
     rescue ApiClient::ApiError => e
       # If not found (404), then the username IS available

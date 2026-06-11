@@ -14,7 +14,8 @@ module FaceCloak
       username = Account.normalize_username(username)
       validate_credentials!(username, password)
 
-      response = @client.post('/auth/authenticate', { username: username, password: password })
+      credentials = { username: username, password: password }
+      response = @client.post('/auth/authenticate', SignedMessage.sign(credentials))
       authenticated_account(response)
     rescue ApiClient::ApiError => e
       raise UnauthorizedError, "Authentication failed: #{e.message}" if e.status == 403
