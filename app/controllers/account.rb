@@ -205,37 +205,40 @@ module FaceCloak
         # GET /account/[username]
         routing.get do
           if username == @current_account.username
-            images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
+            begin
+              profile_account = GetAccount.new(App.config).call(
+                username: username,
+                auth_token: @current_account.auth_token
+              )
+              images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
 
-            owned_images = []
-            assigned_images = []
-            current_user_id = @current_account.id.to_s
+              owned_images = []
+              assigned_images = []
+              current_user_id = @current_account.id.to_s
 
-            images.each do |img|
-              if img.owner_id.to_s == current_user_id
-                owned_images << img
-              else
-                assigned_images << img
+              images.each do |img|
+                if img.owner_id.to_s == current_user_id
+                  owned_images << img
+                else
+                  assigned_images << img
+                end
               end
-            end
 
-            view 'account/show', locals: {
-              username: @current_account.handle,
-              owned_images: owned_images,
-              assigned_images: assigned_images
-            }
+              view 'account/show',
+                   locals: { username: profile_account.handle, is_self: true,
+                             api_key: profile_account.auth_token, owned_images: owned_images,
+                             assigned_images: assigned_images }
+            rescue ApiClient::ApiError => e
+              raise unless stale_session_error?(e)
+
+              clear_stale_session!(routing)
+            end
           else
             flash[:error] = 'Profile view for other users not implemented yet'
             routing.redirect '/'
           end
         end
       end
-    end
-
-    private
-
-    def some_other_private_method_if_needed
-      # This space intentionally left for future private methods
     end
   end
 end

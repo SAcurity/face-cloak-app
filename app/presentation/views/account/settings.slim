@@ -5,6 +5,7 @@
 - is_admin = capabilities['is_admin'] || capabilities[:is_admin]
 - current_roles = Array(current_account['system_roles'] || current_account['roles']).map(&:to_s)
 - identity = is_admin || current_roles.include?('admin') ? 'Admin' : 'Member'
+- can_change_password = current_account.fetch('has_password', true) != false
 
 div class="product-tile tile-white account-settings-page"
   div class="container account-settings-container"
@@ -52,18 +53,19 @@ div class="product-tile tile-white account-settings-page"
 
       div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0"
         div class="settings-stack"
-          section class="settings-panel"
-            div class="settings-panel-header"
-              div
-                h2 class="settings-panel-title" Change password
-                p class="settings-panel-copy" Update the password used to sign in.
-            form action="/account/settings/password" method="post" class="settings-form"
-              label class="caption text-muted" for="settings-current-password" Current password
-              input id="settings-current-password" name="current_password" type="password" class="form-control" autocomplete="current-password"
-              label class="caption text-muted mt-2" for="settings-new-password" New password
-              div class="settings-input-row"
-                input id="settings-new-password" name="new_password" type="password" class="form-control" autocomplete="new-password"
-                button type="submit" class="btn btn-primary settings-action-button" Update
+          - if can_change_password
+            section class="settings-panel"
+              div class="settings-panel-header"
+                div
+                  h2 class="settings-panel-title" Change password
+                  p class="settings-panel-copy" Update the password used to sign in.
+              form action="/account/settings/password" method="post" class="settings-form"
+                label class="caption text-muted" for="settings-current-password" Current password
+                input id="settings-current-password" name="current_password" type="password" class="form-control" autocomplete="current-password"
+                label class="caption text-muted mt-2" for="settings-new-password" New password
+                div class="settings-input-row"
+                  input id="settings-new-password" name="new_password" type="password" class="form-control" autocomplete="new-password"
+                  button type="submit" class="btn btn-primary settings-action-button" Update
 
           section class="settings-panel settings-danger-panel"
             div class="settings-danger-zone"

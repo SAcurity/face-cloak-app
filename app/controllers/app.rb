@@ -86,6 +86,17 @@ module FaceCloak
       routing.redirect '/auth/login'
     end
 
+    def clear_stale_session!(routing)
+      CurrentSession.new(session).delete
+      @current_account = nil
+      flash[:error] = 'Please log in again'
+      routing.redirect '/auth/login'
+    end
+
+    def stale_session_error?(error)
+      error.is_a?(ApiClient::ApiError) && [401, 403].include?(error.status)
+    end
+
     def images_with_upload_logs(images, auth_token)
       return images unless auth_token
 

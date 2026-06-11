@@ -9,9 +9,17 @@ module FaceCloak
 
     def call(username:, auth_token:)
       response = @client.get("/accounts/#{Account.normalize_username(username)}", auth_token: auth_token)
-      authorized = response.fetch('data', response)
-      attrs = authorized.fetch('attributes', authorized)
-      Account.from_api(attrs.fetch('account'), auth_token)
+      authorized_account(response)
+    end
+
+    private
+
+    def authorized_account(response)
+      envelope = response.fetch('data', response)
+      attributes = envelope.fetch('attributes', envelope)
+      return Account.from_api(attributes.fetch('account'), attributes['auth_token']) if attributes.key?('account')
+
+      Account.from_api(envelope, nil)
     end
   end
 end
