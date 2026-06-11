@@ -2641,9 +2641,47 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   white-space: nowrap;
 }
 
+.settings-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-width: 112px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.settings-panel-toggle i {
+  width: 1.15em;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.api-access-toggle .hide-key-label,
+.api-access-toggle[aria-expanded="true"] .show-key-label {
+  display: none;
+}
+
+.api-access-toggle[aria-expanded="true"] .hide-key-label {
+  display: inline;
+}
+
+.collapse-label-toggle .expanded-label,
+.collapse-label-toggle[aria-expanded="true"] .collapsed-label {
+  display: none;
+}
+
+.collapse-label-toggle[aria-expanded="true"] .expanded-label {
+  display: inline;
+}
+
 .api-key-box {
-  margin: 18px 0 0;
-  padding: 14px;
+  margin: 0;
+  padding: 14px 48px 14px 14px;
   max-height: 180px;
   overflow: auto;
   white-space: pre-wrap;
@@ -2653,6 +2691,50 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   border: 1px solid #e8e8ed;
   border-radius: 8px;
   font-size: 13px;
+}
+
+.api-key-reveal {
+  position: relative;
+  margin-top: 18px;
+}
+
+.api-key-copy-button {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #6e6e73;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1;
+  box-shadow: none;
+  transform: none;
+}
+
+.api-key-copy-button i {
+  pointer-events: none;
+}
+
+.api-key-copy-button:hover,
+.api-key-copy-button:focus,
+.api-key-copy-button:active {
+  color: #424245;
+  background: #e8e8ed;
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.api-key-copy-button.is-copied {
+  color: #2f7d4f;
 }
 
 .navbar-nav .nav-link {
@@ -2726,10 +2808,9 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 
 .settings-panel-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
 }
 
 .settings-panel-title {
@@ -2779,6 +2860,10 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   gap: 8px;
 }
 
+.settings-collapsible-body {
+  margin-top: 18px;
+}
+
 .settings-inline-form {
   display: grid;
   gap: 8px;
@@ -2798,6 +2883,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 .settings-action-button {
   align-self: stretch;
   min-width: 86px;
+  min-height: 40px;
   padding: 0 16px !important;
   font-size: 14px;
   font-weight: 700;
@@ -2819,6 +2905,12 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
+}
+
+.settings-danger-zone .danger-outline-button {
+  height: 40px;
+  min-width: 112px;
+  padding: 0 16px;
 }
 
 .settings-danger-zone form {

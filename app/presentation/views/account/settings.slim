@@ -6,6 +6,7 @@
 - current_roles = Array(current_account['system_roles'] || current_account['roles']).map(&:to_s)
 - identity = is_admin || current_roles.include?('admin') ? 'Admin' : 'Member'
 - can_change_password = current_account.fetch('has_password', true) != false
+- api_key = defined?(api_key) ? api_key : nil
 
 div class="product-tile tile-white account-settings-page"
   div class="container account-settings-container"
@@ -53,19 +54,41 @@ div class="product-tile tile-white account-settings-page"
 
       div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0"
         div class="settings-stack"
+          - if api_key
+            section class="settings-panel"
+              div class="api-access-header"
+                div
+                  h2 class="settings-panel-title" API Access
+                  p class="settings-panel-copy mb-0" Limited read-only key for command-line or automation access.
+                button class="btn-secondary-pill api-access-toggle settings-panel-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#settings-api-key" aria-expanded="false" aria-controls="settings-api-key"
+                  i class="fas fa-key" aria-hidden="true"
+                  span class="show-key-label" Show key
+                  span class="hide-key-label" Hide key
+              div id="settings-api-key" class="collapse"
+                div class="api-key-reveal"
+                  button class="api-key-copy-button" type="button" data-copy-target="#settings-api-key-value" data-copy-label="Copy API key" data-copied-label="Copied" aria-label="Copy API key"
+                    i class="far fa-copy" aria-hidden="true"
+                    span class="visually-hidden" Copy
+                  pre id="settings-api-key-value" class="api-key-box" = api_key
+
           - if can_change_password
             section class="settings-panel"
               div class="settings-panel-header"
                 div
                   h2 class="settings-panel-title" Change password
-                  p class="settings-panel-copy" Update the password used to sign in.
-              form action="/account/settings/password" method="post" class="settings-form"
-                label class="caption text-muted" for="settings-current-password" Current password
-                input id="settings-current-password" name="current_password" type="password" class="form-control" autocomplete="current-password"
-                label class="caption text-muted mt-2" for="settings-new-password" New password
-                div class="settings-input-row"
-                  input id="settings-new-password" name="new_password" type="password" class="form-control" autocomplete="new-password"
-                  button type="submit" class="btn btn-primary settings-action-button" Update
+                  p class="settings-panel-copy mb-0" Update the password used to sign in.
+                button class="btn-secondary-pill settings-panel-toggle collapse-label-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#settings-password-form" aria-expanded="false" aria-controls="settings-password-form"
+                  i class="fas fa-lock" aria-hidden="true"
+                  span class="collapsed-label" Change
+                  span class="expanded-label" Cancel
+              div id="settings-password-form" class="collapse settings-collapsible-body"
+                form action="/account/settings/password" method="post" class="settings-form"
+                  label class="caption text-muted" for="settings-current-password" Current password
+                  input id="settings-current-password" name="current_password" type="password" class="form-control" autocomplete="current-password"
+                  label class="caption text-muted mt-2" for="settings-new-password" New password
+                  div class="settings-input-row"
+                    input id="settings-new-password" name="new_password" type="password" class="form-control" autocomplete="new-password"
+                    button type="submit" class="btn btn-primary settings-action-button" Update
 
           section class="settings-panel settings-danger-panel"
             div class="settings-danger-zone"

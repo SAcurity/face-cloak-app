@@ -1,7 +1,5 @@
 div class="product-tile tile-white" style="padding-top: 40px;"
   div class="container"
-    - profile_is_self = defined?(is_self) ? is_self : false
-    - profile_api_key = defined?(api_key) ? api_key : nil
     div class="d-flex align-items-center justify-content-center mb-3 pt-2 pb-3"
       == avatar_for(username, size: 64)
       div class="ms-3 text-start"
@@ -47,15 +45,3 @@ div class="product-tile tile-white" style="padding-top: 40px;"
             div class="text-muted"
               i class="fas fa-tags fa-2x mb-3 d-block opacity-25"
               p You have not been assigned to any images.
-
-    - if profile_is_self && profile_api_key
-      div class="api-access-panel mx-auto mt-5"
-        div class="api-access-header"
-          div
-            h3 API Access
-            p Limited read-only key for command-line or automation access.
-          button class="btn-secondary-pill api-access-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#profile-api-key" aria-expanded="false" aria-controls="profile-api-key"
-            i class="fas fa-key" aria-hidden="true"
-            span Show key
-        div id="profile-api-key" class="collapse"
-          pre class="api-key-box" = profile_api_key

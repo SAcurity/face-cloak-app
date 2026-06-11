@@ -221,7 +221,7 @@ These app changes assume the FaceCloak API exposes matching behavior:
 
 - [x] **Service tests: limited account API key**
   - [x] Add/update `spec/integration/service_get_account_spec.rb`.
-  - [x] Stub `GET /accounts/:username`.
+  - [x] Stub `GET /accounts/:settings`.
   - [x] Assert caller Bearer token is the full session token.
   - [x] Assert returned `Account#auth_token` is the limited API key from `data.attributes.auth_token`.
 
@@ -249,23 +249,23 @@ These app changes assume the FaceCloak API exposes matching behavior:
 
 ## Phase 7: Manual Verification
 
-- [ ] **Scoped API key smoke test**
-  - [ ] Login normally.
-  - [ ] Visit `/account/:username`.
-  - [ ] Reveal the API key.
-  - [ ] Use it from the command line against a read endpoint.
-  - [ ] Confirm write endpoints fail when called with the limited key.
+- [x] **Scoped API key smoke test**
+  - [x] Login normally.
+  - [x] Visit `/account/:settings`.
+  - [x] Reveal the API key.
+  - [x] Use it from the command line against a read endpoint.
+  - [x] Confirm write endpoints fail when called with the limited key.
 
-- [ ] **Old session behavior**
-  - [ ] Start with an old local session if available.
-  - [ ] Confirm the app clears it or asks the user to log in again cleanly.
+- [x] **Old session behavior**
+  - [x] Start with an old local session if available.
+  - [x] Confirm the app clears it or asks the user to log in again cleanly.
 
-- [ ] **Google SSO**
-  - [ ] Configure Google OAuth credentials.
-  - [ ] Click "Continue with Google".
-  - [ ] Complete the Google flow.
-  - [ ] Confirm the API-created/found account is stored in `CurrentSession`.
-  - [ ] Confirm logout/login still works for password accounts.
+- [x] **Google SSO**
+  - [x] Configure Google OAuth credentials.
+  - [x] Click "Continue with Google".
+  - [x] Complete the Google flow.
+  - [x] Confirm the API-created/found account is stored in `CurrentSession`.
+  - [x] Confirm logout/login still works for password accounts.
 
 ## Implementation Notes
 

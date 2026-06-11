@@ -27,22 +27,30 @@ describe 'Regression: Google SSO routes are wired through redirect callback flow
 end
 
 describe 'Regression: account API key is limited and self-view only' do
-  it 'account controller passes api_key from fetched profile account' do
+  it 'account controller passes api_key from fetched settings account' do
     source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
 
-    _(source).must_match(/api_key:\s*profile_account\.auth_token/)
+    _(source).must_match(/api_key:\s*settings_api_key/)
+    _(source).must_match(/account\.auth_token/)
   end
 
-  it 'account view gates API Access on self-view and api_key' do
-    source = File.read(File.expand_path('../app/presentation/views/account/show.slim', __dir__))
+  it 'settings view gates API Access on api_key' do
+    source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
 
-    _(source).must_match(/if profile_is_self && profile_api_key/)
+    _(source).must_match(/if api_key/)
   end
 
-  it 'account view never renders the full session token directly' do
-    source = File.read(File.expand_path('../app/presentation/views/account/show.slim', __dir__))
+  it 'settings view never renders the full session token directly' do
+    source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
 
     _(source).wont_match(/@current_account\.auth_token/)
+  end
+
+  it 'settings view switches the key toggle text when expanded' do
+    source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
+
+    _(source).must_match(/show-key-label/)
+    _(source).must_match(/hide-key-label/)
   end
 end
 

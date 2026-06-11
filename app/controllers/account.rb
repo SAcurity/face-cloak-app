@@ -57,8 +57,17 @@ module FaceCloak
       view 'account/settings',
            locals: {
              accounts: status_data[:accounts],
-             capabilities: status_data[:capabilities]
+             capabilities: status_data[:capabilities],
+             api_key: settings_api_key
            }
+    end
+
+    def settings_api_key
+      account = GetAccount.new(App.config).call(
+        username: @current_account.username,
+        auth_token: @current_account.auth_token
+      )
+      account.auth_token
     end
 
     def update_username(username)
@@ -206,10 +215,6 @@ module FaceCloak
         routing.get do
           if username == @current_account.username
             begin
-              profile_account = GetAccount.new(App.config).call(
-                username: username,
-                auth_token: @current_account.auth_token
-              )
               images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
 
               owned_images = []
@@ -225,8 +230,7 @@ module FaceCloak
               end
 
               view 'account/show',
-                   locals: { username: profile_account.handle, is_self: true,
-                             api_key: profile_account.auth_token, owned_images: owned_images,
+                   locals: { username: @current_account.handle, owned_images: owned_images,
                              assigned_images: assigned_images }
             rescue ApiClient::ApiError => e
               raise unless stale_session_error?(e)

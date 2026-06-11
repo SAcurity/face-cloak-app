@@ -75,6 +75,47 @@
     if (!isImageDetail) window.sessionStorage.setItem(previousPageKey, currentPath);
   });
 
+  app.registerInitializer('copy-buttons', function() {
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', 'readonly');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+      return Promise.resolve();
+    }
+
+    document.querySelectorAll('[data-copy-target]').forEach(function(button) {
+      const target = document.querySelector(button.getAttribute('data-copy-target'));
+      if (!target) return;
+
+      const icon = button.querySelector('i');
+      const originalLabel = button.dataset.copyLabel || button.getAttribute('aria-label') || 'Copy API key';
+      const copiedLabel = button.dataset.copiedLabel || 'Copied';
+      button.addEventListener('click', function() {
+        const text = target.textContent.trim();
+        const copy = window.navigator.clipboard ?
+          window.navigator.clipboard.writeText(text) :
+          fallbackCopy(text);
+
+        copy.then(function() {
+          button.classList.add('is-copied');
+          button.setAttribute('aria-label', copiedLabel);
+          if (icon) icon.className = 'fas fa-check';
+          window.setTimeout(function() {
+            button.classList.remove('is-copied');
+            button.setAttribute('aria-label', originalLabel);
+            if (icon) icon.className = 'far fa-copy';
+          }, 1400);
+        });
+      });
+    });
+  });
+
   app.registerInitializer('notifications', function() {
     document.querySelectorAll('.notification-menu').forEach(function(menu) {
       const trigger = menu.querySelector('[data-notification-trigger]');
