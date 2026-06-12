@@ -17,9 +17,8 @@ module FaceCloak
     rescue ApiClient::ApiError => e
       App.logger.warn("SSO API ERROR: status=#{e.status} body=#{e.body.inspect}") if defined?(App)
       raise UnauthorizedError, "SSO authentication failed: #{e.message}" if [400, 401, 403, 422].include?(e.status)
-      raise ApiServerError, e.message if e.status >= 500
 
-      raise
+      raise ApiServerError, e.message
     end
 
     private
