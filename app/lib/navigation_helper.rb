@@ -47,7 +47,7 @@ module FaceCloak
     end
 
     def assignment_owner_label(assignment)
-      owner = Account.handle_for(assignment['owner_username'])
+      owner = FaceCloak::Account.handle_for(assignment['owner_username'])
       owner.empty? ? 'Someone' : owner
     end
 
@@ -65,7 +65,7 @@ module FaceCloak
 
     def build_assignment_notifications(images, account)
       current_id = account.id.to_s
-      current_username = Account.normalize_username(account.username)
+      current_username = FaceCloak::Account.normalize_username(account.username)
 
       images.flat_map do |image|
         image.faces.each_with_index.filter_map do |face, index|
@@ -78,7 +78,7 @@ module FaceCloak
     end
 
     def assignment_notification(image, face, index)
-      owner = Account.handle_for(image_owner_username(image))
+      owner = FaceCloak::Account.handle_for(image_owner_username(image))
       {
         image_id: image.id,
         face_id: face.id.to_s,

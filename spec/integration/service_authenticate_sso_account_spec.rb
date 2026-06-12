@@ -46,4 +46,14 @@ describe 'AuthenticateSsoAccount service' do
       FaceCloak::AuthenticateSsoAccount.new(app.config).call(**@payload)
     }).must_raise FaceCloak::AuthenticateSsoAccount::UnauthorizedError
   end
+
+  it 'SAD: handles API validation errors without leaking ApiError' do
+    WebMock.stub_request(:post, "#{API_URL}/auth/sso")
+           .with(body: FaceCloak::SignedMessage.sign(@payload).to_json)
+           .to_return(status: 400, body: { message: 'Bad SSO request' }.to_json)
+
+    _(proc {
+      FaceCloak::AuthenticateSsoAccount.new(app.config).call(**@payload)
+    }).must_raise FaceCloak::AuthenticateSsoAccount::UnauthorizedError
+  end
 end

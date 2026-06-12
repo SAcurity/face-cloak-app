@@ -12,8 +12,8 @@ module FaceCloak
     plugin :multi_route
 
     CDN_SCRIPT_SRC = %w[https://cdn.jsdelivr.net].freeze
-    CDN_STYLE_SRC = %w[https://cdn.jsdelivr.net https://cdnjs.cloudflare.com].freeze
-    CDN_FONT_SRC = %w[https://cdnjs.cloudflare.com].freeze
+    CDN_STYLE_SRC = %w[https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com].freeze
+    CDN_FONT_SRC = %w[https://cdnjs.cloudflare.com https://fonts.gstatic.com].freeze
 
     def self.api_origin
       uri = URI(config.API_URL.to_s)

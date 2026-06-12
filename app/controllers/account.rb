@@ -10,7 +10,7 @@ module FaceCloak
     private
 
     def delete_account_response(routing, target_username)
-      target = Account.normalize_username(target_username)
+      target = FaceCloak::Account.normalize_username(target_username)
       delete_account(target)
       return deleted_self_response(routing) if target == @current_account.username
 
@@ -73,7 +73,7 @@ module FaceCloak
     def update_username(username)
       UpdateAccount.new(App.config).call(
         username: @current_account.username,
-        updates: { username: Account.normalize_username(username) },
+        updates: { username: FaceCloak::Account.normalize_username(username) },
         auth_token: @current_account.auth_token
       )
     end
@@ -94,7 +94,7 @@ module FaceCloak
     end
 
     def sync_current_account(updated)
-      CurrentSession.new(session).current_account = Account.from_api(updated, @current_account.auth_token)
+      CurrentSession.new(session).current_account = FaceCloak::Account.from_api(updated, @current_account.auth_token)
       @current_account = CurrentSession.new(session).current_account
     end
   end
@@ -148,7 +148,7 @@ module FaceCloak
           visible_accounts = accounts.reject { |account| account['id'].to_s == current_account_id }
           {
             accounts: visible_accounts.map do |account|
-              { id: account['id'], username: account['username'], handle: Account.handle_for(account['username']) }
+              { id: account['id'], username: account['username'], handle: FaceCloak::Account.handle_for(account['username']) }
             end
           }.to_json
         rescue StandardError => e
@@ -164,7 +164,7 @@ module FaceCloak
 
           # Normalize username before validation to match contract expectations
           params = routing.params.dup
-          params['username'] = Account.normalize_username(params['username'])
+          params['username'] = FaceCloak::Account.normalize_username(params['username'])
 
           completion_input = FaceCloak::Form::AccountCompletion.new.call(params)
 
@@ -175,7 +175,7 @@ module FaceCloak
                       locals: {
                         registration_token: username_or_token,
                         email: token.email,
-                        username: Account.handle_for(completion_input[:username])
+                        username: FaceCloak::Account.handle_for(completion_input[:username])
                       })
           end
 
@@ -200,7 +200,7 @@ module FaceCloak
                     locals: {
                       registration_token: username_or_token,
                       email: token.email,
-                      username: Account.handle_for(username)
+                      username: FaceCloak::Account.handle_for(username)
                     })
         rescue StandardError => e
           App.logger.error "ERROR CREATING ACCOUNT: #{e.inspect}"
@@ -209,7 +209,7 @@ module FaceCloak
         end
 
         require_login!(routing)
-        username = Account.normalize_username(username_or_token)
+        username = FaceCloak::Account.normalize_username(username_or_token)
 
         # GET /account/[username]
         routing.get do

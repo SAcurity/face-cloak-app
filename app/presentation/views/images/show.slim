@@ -8,7 +8,7 @@
 - image_src = "/images/#{image.id}/#{view_type}"
 - image_alt = assignment_mode ? 'Original Image' : 'Cloaked Image'
 - current_handle = @current_account&.handle.to_s
-- current_username = FaceCloak::Account.normalize_username(current_handle)
+- current_username = Account.normalize_username(current_handle)
 - current_account_id = @current_account&.id.to_s
 - box_faces = faces.select { |face| face_box_data(face, image) }.sort_by { |face| face_box_left(face, image) }
 - face_numbers_by_id = {}
@@ -21,18 +21,18 @@
 - response_faces = response_box_faces.any? ? response_box_faces : my_assigned_faces
 - selectable_faces = response_mode ? response_faces : (box_faces.any? ? box_faces : faces)
 - log_faces = box_faces.any? ? box_faces : faces
-- selected_face_id = ((selectable_faces.first || Face.from_api({})).id).to_s
+- selected_face_id = selectable_faces.first&.id.to_s
 - selected_face_number = face_numbers_by_id[selected_face_id] || (selectable_faces.any? ? 1 : nil)
 - self_assignment_taken = !current_account_id.empty? && faces.any? { |face| face_assigned_to?(face, current_username, current_account_id) }
 - account_statuses = {}
 - (box_faces.any? ? box_faces : faces).each_with_index do |face, index|
   - status = "Face ##{index + 1}"
   - assigned_id = face_assigned_user_id(face).to_s
-  - assigned_name = FaceCloak::Account.normalize_username(face_assigned_username(face)).downcase
+  - assigned_name = Account.normalize_username(face_assigned_username(face)).downcase
   - account_statuses[assigned_id] = status unless assigned_id.empty?
   - account_statuses["username:#{assigned_name}"] = status unless assigned_name.empty?
   - face_declined_handles(face).each do |handle|
-    - declined_name = FaceCloak::Account.normalize_username(handle).downcase
+    - declined_name = Account.normalize_username(handle).downcase
     - account_statuses["username:#{declined_name}"] ||= 'Declined' unless declined_name.empty?
 
 div class="product-tile tile-white image-detail-page"
@@ -65,7 +65,8 @@ div class="product-tile tile-white image-detail-page"
       datalist id="username-options" data-username-options=true data-source-url="/account/usernames" data-current-username=current_username data-current-account-id=current_account_id data-account-statuses=account_statuses.to_json
 
     - if assignment_mode
-      - overlay_faces = box_faces
+      - overlay_faces = box_faces.reject do |face|
+        - face_assigned_to?(face, current_username, current_account_id)
     - else
       - overlay_faces = response_box_faces
     - show_face_overlay = (assignment_mode || response_mode) && overlay_faces.any?

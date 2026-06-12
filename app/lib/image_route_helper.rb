@@ -36,7 +36,12 @@ module FaceCloak
       can_manage_faces = manageable_image?(image_data, @current_account)
       routing.redirect "/images/#{image_id}/cloak" if view_type == 'raw' && !can_manage_faces
 
-      view 'images/show', locals: image_detail_locals(image_data, image_id, auth_token, can_manage_faces, view_type)
+      begin
+        view 'images/show', locals: image_detail_locals(image_data, image_id, auth_token, can_manage_faces, view_type)
+      rescue StandardError => e
+        App.logger.error "IMAGE VIEW RENDERING FAILED: #{e.class} - #{e.message}\n#{e.backtrace[0..10].join("\n")}"
+        raise e
+      end
     end
 
     def safe_image_return_view(params)

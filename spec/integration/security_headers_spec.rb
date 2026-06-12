@@ -32,7 +32,9 @@ describe 'Security headers middleware' do
     _(csp).must_match(%r{script-src [^;]*https://cdn\.jsdelivr\.net})
     _(csp).must_match(%r{style-src [^;]*https://cdn\.jsdelivr\.net})
     _(csp).must_match(%r{style-src [^;]*https://cdnjs\.cloudflare\.com})
+    _(csp).must_match(%r{style-src [^;]*https://fonts\.googleapis\.com})
     _(csp).must_match(%r{font-src [^;]*https://cdnjs\.cloudflare\.com})
+    _(csp).must_match(%r{font-src [^;]*https://fonts\.gstatic\.com})
     _(csp).must_match(/img-src [^;]*data:/)
     _(csp).must_match(%r{img-src [^;]*http://localhost:3000})
   end

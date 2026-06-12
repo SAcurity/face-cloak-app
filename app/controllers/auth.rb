@@ -39,7 +39,7 @@ module FaceCloak
     end
 
     def username_availability_response(raw_username)
-      username = Account.normalize_username(raw_username)
+      username = FaceCloak::Account.normalize_username(raw_username)
       return invalid_username_response if username.empty?
 
       {
@@ -250,7 +250,7 @@ module FaceCloak
 
           # Use to_h to ensure we have a clean hash for service call
           credentials = login_input.to_h
-          username = Account.normalize_username(credentials[:username])
+          username = FaceCloak::Account.normalize_username(credentials[:username])
           password = credentials[:password]
 
           account = AuthenticateAccount.new(App.config).call(
