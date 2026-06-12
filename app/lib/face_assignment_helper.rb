@@ -22,7 +22,9 @@ module FaceCloak
       assigned_id = face_assigned_user_id(face).to_s
       return true if !assigned_id.empty? && !account_id.to_s.empty? && assigned_id == account_id.to_s
 
-      FaceCloak::Account.normalize_username(face_assigned_username(face)) == FaceCloak::Account.normalize_username(username)
+      assigned_username = FaceCloak::Account.normalize_username(face_assigned_username(face))
+      current_username = FaceCloak::Account.normalize_username(username)
+      !assigned_username.empty? && !current_username.empty? && assigned_username == current_username
     end
 
     def face_assigned?(face)

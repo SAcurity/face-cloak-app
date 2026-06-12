@@ -65,6 +65,12 @@ module FaceCloak
       end
 
       uid = assignment_input[:assigned_user_id].to_s.strip
+      uid = assigned_user_id_for_username(assignment_input[:assigned_username], auth_token) if uid.empty?
+      if uid.to_s.empty?
+        flash[:error] = 'Choose a valid account from the list.'
+        return routing.redirect "/images/#{image_id}/raw"
+      end
+
       self_assign = assignment_input[:assign_self].to_s == 'true'
 
       if uid == @current_account.id.to_s && !self_assign
@@ -91,6 +97,17 @@ module FaceCloak
       routing.redirect "/images/#{image_id}/raw"
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    def assigned_user_id_for_username(username, auth_token)
+      target = FaceCloak::Account.normalize_username(username)
+      return nil if target.empty?
+
+      account = FindAccount.new(FaceCloak::App.config).call(username: target)
+      account && account['id'].to_s
+    rescue StandardError => e
+      App.logger.warn "ASSIGNMENT USER LOOKUP FAILED: #{e.inspect}"
+      nil
+    end
   end
 
   # Web controller for the FaceCloak Web App

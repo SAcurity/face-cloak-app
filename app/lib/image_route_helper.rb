@@ -73,8 +73,7 @@ module FaceCloak
     end
 
     def manageable_image?(image, account = @current_account)
-      policies = image.policies
-      policies.can_manage_faces || image_owned_by_current?(image, account) || admin_account?(account)
+      image_owned_by_current?(image, account) || admin_account?(account)
     end
 
     def admin_account?(account)

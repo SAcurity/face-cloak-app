@@ -63,6 +63,133 @@ describe 'Regression: SSO-only accounts do not show password form' do
   end
 end
 
+describe 'Regression: image detail template renders in app context' do
+  it 'renders without unqualified model constants' do
+    account = FaceCloak::Account.from_api(
+      {
+        'attributes' => { 'id' => 1, 'username' => 'alice', 'email' => 'alice@example.com' },
+        'capabilities' => { 'is_admin' => true },
+        'include' => { 'face_assignments' => [] }
+      },
+      'auth-token'
+    )
+    image = FaceCloak::Image.from_api(
+      {
+        'attributes' => {
+          'id' => 'img-1',
+          'file_name' => 'sample.png',
+          'owner' => { 'id' => 1, 'username' => 'alice' }
+        },
+        'policies' => { 'can_manage_faces' => true, 'can_delete' => false },
+        'include' => { 'faces' => [], 'logs' => [] }
+      }
+    )
+    app_instance = FaceCloak::App.new({})
+    app_instance.instance_variable_set(:@current_account, account)
+    app_instance.instance_variable_set(:@routing, Struct.new(:path, :params).new('/images/img-1/raw', {}))
+
+    html = app_instance.render(
+      'images/show',
+      locals: { image:, image_logs: [], accounts_by_id: {}, is_owner: true, view_type: 'raw' }
+    )
+
+    _(html).must_include 'image-detail-page'
+  end
+end
+
+describe 'Regression: assigned faces remain revisitable after response' do
+  it 'navigation notifications only include pending assignments' do
+    source = File.read(File.expand_path('../app/lib/navigation_helper.rb', __dir__))
+
+    _(source).must_match(/next unless pending_assignment\?/)
+    _(source).must_match(/next if face_response_updated\?/)
+  end
+
+  it 'edit mode face overlay keeps self-assigned faces selectable' do
+    source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+
+    _(source).must_include "    - if assignment_mode\n      - overlay_faces = box_faces"
+  end
+
+  it 'response mode only exposes faces assigned to the current account' do
+    source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+
+    _(source).must_include 'my_assigned_faces = faces.select { |face| face_assigned_to?(face, current_username, current_account_id) }'
+    _(source).wont_match(/my_assigned_faces = .*can_respond/)
+  end
+
+  it 'raw assignment mode is reserved for the image owner or admin' do
+    source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+    route_source = File.read(File.expand_path('../app/lib/image_route_helper.rb', __dir__))
+
+    _(source).must_match(/can_manage_all_faces = is_owner && \(current_is_image_owner \|\| current_is_admin\)/)
+    _(source).must_include "assignment_mode = can_manage_all_faces && view_type == 'raw'"
+    _(route_source).wont_match(/policies\.can_manage_faces \|\|/)
+  end
+end
+
+describe 'Regression: notification unread controls' do
+  it 'layout exposes notification IDs and bulk read controls' do
+    source = File.read(File.expand_path('../app/presentation/views/layout.slim', __dir__))
+
+    _(source).must_match(/data-notification-count/)
+    _(source).must_match(/data-notification-read-all/)
+    _(source).wont_match(/data-notification-unread-all/)
+    _(source).must_match(/data-notification-id=notification_id/)
+  end
+
+  it 'common UI stores read notification state locally' do
+    source = File.read(File.expand_path('../app/presentation/assets/js/modules/common-ui.js', __dir__))
+
+    _(source).must_match(/facecloak\.notification\.read/)
+    _(source).must_match(/updateNotificationState/)
+    _(source).must_match(/readIds\.add\(itemId\(item\)\)/)
+    _(source).wont_match(/readIds\.delete\(itemId\(item\)\)/)
+  end
+end
+
+describe 'Regression: face assignment ownership checks' do
+  it 'does not treat unassigned faces as assigned to an empty username' do
+    helper = Object.new.extend(FaceCloak::FaceAssignmentHelper)
+    face = FaceCloak::Face.from_api('attributes' => { 'id' => 'face-1' })
+
+    _(helper.face_assigned_to?(face, '', '')).must_equal false
+  end
+end
+
+describe 'Regression: username assignment accepts exact handles' do
+  it 'face assignment form posts the typed username as a fallback' do
+    source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+
+    _(source.scan(/name="assigned_username"/).length).must_be :>=, 2
+  end
+
+  it 'face assignment script resolves exact handle matches before submit' do
+    source = File.read(File.expand_path('../app/presentation/assets/js/modules/face-assignment.js', __dir__))
+
+    _(source).must_match(/function exactAccountMatch/)
+    _(source).must_match(/function syncExactAccount/)
+    _(source).must_match(/syncExactAccount\(input\);\n\s+clearAssignmentError\(form\)/)
+  end
+
+  it 'face assignment suggestions stay visible while accounts load' do
+    source = File.read(File.expand_path('../app/presentation/assets/js/modules/face-assignment.js', __dir__))
+    css = File.read(File.expand_path('../app/presentation/assets/css/style.css', __dir__))
+
+    _(source).must_match(/usernamesLoading/)
+    _(source).must_match(/Loading accounts/)
+    _(source).must_match(/function positionSuggestionMenu/)
+    _(css).must_match(/\.username-suggestion-menu \{\n\s+position: fixed/)
+  end
+
+  it 'controller can resolve assignment by username when the hidden id is missing' do
+    source = File.read(File.expand_path('../app/controllers/images.rb', __dir__))
+
+    _(source).must_match(/assigned_user_id_for_username/)
+    _(source).must_match(/assignment_input\[:assigned_username\]/)
+  end
+end
+
 describe 'Regression: CSP-compatible presentation source' do
   let(:view_sources) do
     Dir[File.expand_path('../app/presentation/views/**/*.slim', __dir__)].to_h do |path|

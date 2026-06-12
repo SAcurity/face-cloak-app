@@ -937,11 +937,42 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 
 .notification-panel-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 4px 4px 10px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.notification-panel-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notification-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.notification-actions button {
+  padding: 0;
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.notification-actions button:hover,
+.notification-actions button:focus {
+  color: var(--color-primary-focus);
+  outline: none;
+  text-decoration: underline;
 }
 
 .notification-list {
@@ -965,6 +996,15 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 .notification-item:focus {
   color: var(--color-ink);
   background: #ededf0;
+}
+
+.notification-item.is-read {
+  background: #fff;
+}
+
+.notification-item.is-read .notification-item-icon,
+.notification-item.is-read .notification-item-text {
+  opacity: 0.56;
 }
 
 .notification-item-icon {
@@ -1829,7 +1869,7 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   color: #1d8f45;
   background-color: rgba(29, 143, 69, 0.1);
   border-color: rgba(29, 143, 69, 0.28);
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .face-self-submit.is-disabled,
@@ -1837,11 +1877,25 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   color: #6e6e73;
   background-color: #f2f2f7;
   border-color: #d2d2d7;
-  cursor: default;
+  cursor: not-allowed;
 }
 
-.face-self-submit:disabled {
-  pointer-events: none;
+.face-self-submit.is-current:hover,
+.face-self-submit.is-current:focus {
+  color: #1d8f45;
+  background-color: rgba(29, 143, 69, 0.1);
+  border-color: rgba(29, 143, 69, 0.28);
+  cursor: not-allowed;
+}
+
+.face-self-submit.is-disabled:hover,
+.face-self-submit.is-disabled:focus,
+.face-self-submit:disabled:hover,
+.face-self-submit:disabled:focus {
+  color: #6e6e73;
+  background-color: #f2f2f7;
+  border-color: #d2d2d7;
+  cursor: not-allowed;
 }
 
 .assign-timestamp {
@@ -2033,11 +2087,10 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
 }
 
 .username-suggestion-menu {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 6px);
-  left: 10px;
-  right: 10px;
+  position: fixed;
+  z-index: 1400;
+  top: 0;
+  left: 0;
   display: none;
   max-height: 180px;
   overflow-y: auto;
@@ -2073,6 +2126,11 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   background-color: #f0f0f2;
   cursor: not-allowed;
   opacity: 0.72;
+}
+
+.username-suggestion-option.is-empty {
+  color: #6e6e73;
+  cursor: default;
 }
 
 .username-suggestion-status {
@@ -2113,6 +2171,10 @@ h1 { font-size: 40px; line-height: 1.1; margin-bottom: 24px; }
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid #e5e5ea;
+}
+
+.face-response-link-panel {
+  border-top: 0;
 }
 
 .face-response-panel.is-primary {

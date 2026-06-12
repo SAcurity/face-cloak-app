@@ -130,7 +130,73 @@
     document.querySelectorAll('.notification-menu').forEach(function(menu) {
       const trigger = menu.querySelector('[data-notification-trigger]');
       const panel = menu.querySelector('[data-notification-panel]');
+      const countBadge = menu.querySelector('[data-notification-count]');
+      const summary = menu.querySelector('[data-notification-summary]');
+      const readAllButton = menu.querySelector('[data-notification-read-all]');
+      const items = Array.from(menu.querySelectorAll('[data-notification-item]'));
       if (!trigger || !panel) return;
+
+      const storageKey = 'facecloak.notification.read.' + (menu.dataset.notificationScope || 'global');
+
+      function itemId(item) {
+        return item.dataset.notificationId || item.getAttribute('href') || '';
+      }
+
+      function loadReadIds() {
+        try {
+          const parsed = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
+          return new Set(Array.isArray(parsed) ? parsed : []);
+        } catch (error) {
+          return new Set();
+        }
+      }
+
+      function saveReadIds(readIds) {
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(Array.from(readIds)));
+        } catch (error) {
+          // Ignore storage failures; the menu still works for the current page.
+        }
+      }
+
+      function updateNotificationState(readIds) {
+        let unreadCount = 0;
+
+        items.forEach(function(item) {
+          const isRead = readIds.has(itemId(item));
+          item.classList.toggle('is-read', isRead);
+          if (!isRead) unreadCount += 1;
+        });
+
+        if (countBadge) {
+          countBadge.textContent = unreadCount;
+          countBadge.hidden = unreadCount === 0;
+        }
+
+        if (summary) summary.textContent = unreadCount + ' unread';
+      }
+
+      let readIds = loadReadIds();
+      updateNotificationState(readIds);
+
+      items.forEach(function(item) {
+        item.addEventListener('click', function() {
+          readIds.add(itemId(item));
+          saveReadIds(readIds);
+          updateNotificationState(readIds);
+        });
+      });
+
+      if (readAllButton) {
+        readAllButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          items.forEach(function(item) {
+            readIds.add(itemId(item));
+          });
+          saveReadIds(readIds);
+          updateNotificationState(readIds);
+        });
+      }
 
       trigger.addEventListener('click', function(e) {
         e.preventDefault();
