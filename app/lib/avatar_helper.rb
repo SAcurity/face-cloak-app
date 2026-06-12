@@ -4,7 +4,7 @@ module FaceCloak
   # Helper to generate avatar placeholders
   module AvatarHelper
     def avatar_for(username, size: 40)
-      normalized = Account.normalize_username(username)
+      normalized = FaceCloak::Account.normalize_username(username)
       initial = normalized[0]&.upcase || '?'
 
       "<div class='avatar-circle' data-avatar-size='#{size}' data-avatar-color='#{color_for(normalized)}'>

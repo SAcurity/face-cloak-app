@@ -17,10 +17,10 @@ module FaceCloak
 
     def image_owner_handle(image, current_account:, is_owner:)
       owner_username = image_owner_username(image)
-      return Account.handle_for(owner_username) unless owner_username.to_s.empty?
+      return FaceCloak::Account.handle_for(owner_username) unless owner_username.to_s.empty?
 
       current_username = current_account&.username.to_s.strip
-      return Account.handle_for(current_username) if is_owner && !current_username.empty?
+      return FaceCloak::Account.handle_for(current_username) if is_owner && !current_username.empty?
 
       'Unknown username'
     end

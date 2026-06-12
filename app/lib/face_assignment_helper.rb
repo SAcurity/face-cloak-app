@@ -22,7 +22,9 @@ module FaceCloak
       assigned_id = face_assigned_user_id(face).to_s
       return true if !assigned_id.empty? && !account_id.to_s.empty? && assigned_id == account_id.to_s
 
-      Account.normalize_username(face_assigned_username(face)) == Account.normalize_username(username)
+      assigned_username = FaceCloak::Account.normalize_username(face_assigned_username(face))
+      current_username = FaceCloak::Account.normalize_username(username)
+      !assigned_username.empty? && !current_username.empty? && assigned_username == current_username
     end
 
     def face_assigned?(face)
@@ -48,7 +50,7 @@ module FaceCloak
     end
 
     def face_declined_handles(face)
-      declined_usernames(face).map { |username| Account.handle_for(username) }
+      declined_usernames(face).map { |username| FaceCloak::Account.handle_for(username) }
     end
 
     def face_cloak_options
@@ -74,7 +76,7 @@ module FaceCloak
 
     def declined_usernames(face)
       declined_values(face).flat_map { |value| value.to_s.split(',') }
-                           .map { |username| Account.normalize_username(username) }
+                           .map { |username| FaceCloak::Account.normalize_username(username) }
                            .reject(&:empty?)
                            .uniq
     end

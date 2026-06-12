@@ -12,6 +12,7 @@
     const accountStatuses = parseAccountStatuses();
     const selectedFaceKey = 'facecloak.selectedFace:' + window.location.pathname;
     let usernamesLoaded = false;
+    let usernamesLoading = false;
     let accountsCache = [];
 
     function applyFaceBoxGeometry() {
@@ -111,6 +112,23 @@
         .filter(function(account) { return account.id && normalizedUsername(account.handle) !== currentUsername; });
     }
 
+    function positionSuggestionMenu(input, menu) {
+      const rect = input.closest('.assign-pill').getBoundingClientRect();
+      menu.style.left = rect.left + 10 + 'px';
+      menu.style.top = rect.bottom + 6 + 'px';
+      menu.style.width = Math.max(180, rect.width - 20) + 'px';
+    }
+
+    function showSuggestionMessage(input, menu, message) {
+      menu.innerHTML = '';
+      const option = document.createElement('div');
+      option.className = 'username-suggestion-option is-empty';
+      option.textContent = message;
+      menu.appendChild(option);
+      positionSuggestionMenu(input, menu);
+      menu.classList.add('visible');
+    }
+
     function renderSuggestions(input) {
       const pill = input.closest('.assign-pill');
       const menu = pill && pill.querySelector('[data-username-menu]');
@@ -129,6 +147,11 @@
         return;
       }
 
+      if (!usernamesLoaded && usernamesLoading) {
+        showSuggestionMessage(input, menu, 'Loading accounts...');
+        return;
+      }
+
       const query = rawQuery.replace(/^@+/, '').toLowerCase();
       const explicitSearch = query.length > 0;
       const matches = accountOptions()
@@ -139,6 +162,11 @@
         .slice(0, 8);
 
       menu.innerHTML = '';
+      if (!matches.length) {
+        showSuggestionMessage(input, menu, usernamesLoaded ? 'No matching accounts' : 'Type to search accounts');
+        return;
+      }
+
       matches.forEach(function(account) {
         const option = document.createElement('button');
         option.type = 'button';
@@ -167,6 +195,7 @@
         menu.appendChild(option);
       });
 
+      positionSuggestionMenu(input, menu);
       menu.classList.toggle('visible', matches.length > 0);
     }
 
@@ -179,6 +208,25 @@
       return suggestionOptions(menu).filter(function(option) {
         return !option.disabled;
       });
+    }
+
+    function exactAccountMatch(input) {
+      const username = normalizedUsername(input.value);
+      if (!username) return null;
+
+      return accountOptions().find(function(account) {
+        return !account.status && normalizedUsername(account.handle) === username;
+      });
+    }
+
+    function syncExactAccount(input) {
+      const form = input.closest('.face-assign-form');
+      const hiddenInput = form && form.querySelector('[data-assigned-user-id-value]');
+      if (!hiddenInput || input.readOnly) return;
+
+      const match = exactAccountMatch(input);
+      hiddenInput.value = match ? match.id : '';
+      if (match && form) clearAssignmentError(form);
     }
 
     function activeSuggestion(menu) {
@@ -252,8 +300,8 @@
     }
 
     function loadUsernames() {
-      if (!usernameOptions || usernamesLoaded) return;
-      usernamesLoaded = true;
+      if (!usernameOptions || usernamesLoaded || usernamesLoading) return;
+      usernamesLoading = true;
       var sourceUrl = usernameOptions.getAttribute('data-source-url');
       if (!sourceUrl) sourceUrl = '/account/usernames';
 
@@ -264,9 +312,19 @@
         })
         .then(function(body) {
           populateAccounts(body.accounts || []);
-          document.querySelectorAll('[data-username-suggest]').forEach(renderSuggestions);
+          usernamesLoaded = true;
+          document.querySelectorAll('[data-username-suggest]').forEach(function(input) {
+            syncExactAccount(input);
+            renderSuggestions(input);
+          });
         })
-        .catch(function() {});
+        .catch(function() {
+          usernamesLoaded = false;
+        })
+        .finally(function() {
+          usernamesLoading = false;
+          document.querySelectorAll('[data-username-suggest]').forEach(renderSuggestions);
+        });
     }
 
     function storeActiveFace() {
@@ -307,6 +365,7 @@
 
       input.addEventListener('input', function() {
         if (input.value.trim().startsWith('@')) loadUsernames();
+        syncExactAccount(input);
         renderSuggestions(input);
       });
 
@@ -341,6 +400,14 @@
       });
     });
 
+    window.addEventListener('scroll', function() {
+      document.querySelectorAll('[data-username-suggest]').forEach(function(input) {
+        const pill = input.closest('.assign-pill');
+        const menu = pill && pill.querySelector('[data-username-menu]');
+        if (menu && menu.classList.contains('visible')) positionSuggestionMenu(input, menu);
+      });
+    }, true);
+
     document.querySelectorAll('[data-self-choice-toggle]').forEach(function(button) {
       button.addEventListener('click', function() {
         const faceId = button.getAttribute('data-self-choice-toggle');
@@ -368,6 +435,7 @@
 
       form.addEventListener('submit', function(e) {
         const username = normalizedUsername(input.value);
+        syncExactAccount(input);
         clearAssignmentError(form);
 
         if (String(hiddenInput && hiddenInput.value) === String(currentAccountId)) {

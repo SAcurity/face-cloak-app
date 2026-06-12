@@ -8,9 +8,14 @@ module FaceCloak
     end
 
     def call(auth_token:)
-      response = @client.get('/accounts', auth_token: auth_token)
+      response = @client.get('/accounts/usernames', auth_token: auth_token)
 
       response.fetch('data', []).filter_map { |account| account_payload(account) }
+    rescue ApiClient::ApiError => e
+      raise unless e.status == 404
+
+      legacy_response = @client.get('/accounts', auth_token: auth_token)
+      legacy_response.fetch('data', []).filter_map { |account| account_payload(account) }
     end
 
     private

@@ -38,24 +38,29 @@ html
           - if @current_account
             - nav_notifications = assignment_notifications(@current_account)
             - nav_notification_count = nav_notifications.length
+            - notification_scope = @current_account.id.to_s.empty? ? @current_account.username.to_s : @current_account.id.to_s
             a href="/images/new?from=header" class="btn btn-primary stable-primary-button nav-upload-button"
               i class="fas fa-plus stable-button-icon" aria-hidden="true"
               span class="stable-button-label nav-upload-label" Upload
             a href="/account/#{@current_account.username}?from=header" class="text-decoration-none"
               == avatar_for(@current_account.username, size: 32)
-            div class="notification-menu"
+            div class="notification-menu" data-notification-menu=true data-notification-scope=notification_scope
               button type="button" class="nav-icon-button notification-trigger" title="Notifications" aria-label="Notifications" aria-expanded="false" data-notification-trigger=true
                 i class="fas fa-bell" aria-hidden="true"
-                - if nav_notification_count.positive?
-                  span class="notification-count" = nav_notification_count
+                span class="notification-count" data-notification-count=true hidden=nav_notification_count.zero? = nav_notification_count
               div class="notification-panel" data-notification-panel=true
                 div class="notification-panel-header"
-                  span Notifications
-                  span class="caption text-muted" #{nav_notification_count} pending
+                  div class="notification-panel-title"
+                    span Notifications
+                    span class="caption text-muted" data-notification-summary=true #{nav_notification_count} unread
+                  - if nav_notifications.any?
+                    div class="notification-actions"
+                      button type="button" data-notification-read-all=true Read All
                 - if nav_notifications.any?
                   div class="notification-list"
                     - nav_notifications.each do |item|
-                      a href="#{item[:path]}?from=header" class="notification-item"
+                      - notification_id = "#{item[:image_id]}:#{item[:face_id]}"
+                      a href="#{item[:path]}?from=header" class="notification-item" data-notification-item=true data-notification-id=notification_id
                         span class="notification-item-icon"
                           i class="fas fa-user-shield" aria-hidden="true"
                         span class="notification-item-text"

@@ -65,6 +65,12 @@ module FaceCloak
       end
 
       uid = assignment_input[:assigned_user_id].to_s.strip
+      uid = assigned_user_id_for_username(assignment_input[:assigned_username], auth_token) if uid.empty?
+      if uid.to_s.empty?
+        flash[:error] = 'Choose a valid account from the list.'
+        return routing.redirect "/images/#{image_id}/raw"
+      end
+
       self_assign = assignment_input[:assign_self].to_s == 'true'
 
       if uid == @current_account.id.to_s && !self_assign
@@ -73,14 +79,15 @@ module FaceCloak
       end
 
       AssignFace.new(FaceCloak::App.config).call(face_id: face_id, assigned_user_id: uid, auth_token: auth_token)
-        if self_assign && !assignment_input[:cloak_type].to_s.empty?
+      
+      if self_assign && !assignment_input[:cloak_type].to_s.empty?
         RespondFaceAssignment.new(FaceCloak::App.config).call(
           face_id: face_id,
           cloak_type: assignment_input[:cloak_type],
           auth_token: auth_token
         )
         flash[:notice] = 'Masking preference saved'
-          routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
+        routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
       else
         flash[:notice] = routing.params['action'] == 'remind' ? 'Notification sent' : 'Face assigned successfully'
         routing.redirect "/images/#{image_id}/raw"
@@ -90,6 +97,17 @@ module FaceCloak
       routing.redirect "/images/#{image_id}/raw"
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    def assigned_user_id_for_username(username, auth_token)
+      target = FaceCloak::Account.normalize_username(username)
+      return nil if target.empty?
+
+      account = FindAccount.new(FaceCloak::App.config).call(username: target)
+      account && account['id'].to_s
+    rescue StandardError => e
+      App.logger.warn "ASSIGNMENT USER LOOKUP FAILED: #{e.inspect}"
+      nil
+    end
   end
 
   # Web controller for the FaceCloak Web App
