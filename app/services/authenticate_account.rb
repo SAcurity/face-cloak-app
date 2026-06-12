@@ -18,10 +18,9 @@ module FaceCloak
       response = @client.post('/auth/authenticate', SignedMessage.sign(credentials))
       authenticated_account(response)
     rescue ApiClient::ApiError => e
-      raise UnauthorizedError, "Authentication failed: #{e.message}" if e.status == 403
-      raise ApiServerError, e.message if e.status >= 500
+      raise UnauthorizedError, "Authentication failed: #{e.message}" if [400, 401, 403, 422].include?(e.status)
 
-      raise
+      raise ApiServerError, e.message
     end
 
     private
