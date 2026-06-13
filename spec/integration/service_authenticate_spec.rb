@@ -43,4 +43,24 @@ describe 'AuthenticateAccount service' do
       FaceCloak::AuthenticateAccount.new(app.config).call(**@credentials)
     }).must_raise FaceCloak::AuthenticateAccount::UnauthorizedError
   end
+
+  it 'SAD: handles API validation errors without leaking ApiError' do
+    WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
+           .with(body: FaceCloak::SignedMessage.sign(@api_credentials).to_json)
+           .to_return(status: 400, body: {}.to_json)
+
+    _(proc {
+      FaceCloak::AuthenticateAccount.new(app.config).call(**@credentials)
+    }).must_raise FaceCloak::AuthenticateAccount::UnauthorizedError
+  end
+
+  it 'SAD: treats missing authentication API route as an API server error' do
+    WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
+           .with(body: FaceCloak::SignedMessage.sign(@api_credentials).to_json)
+           .to_return(status: 404, body: {}.to_json)
+
+    _(proc {
+      FaceCloak::AuthenticateAccount.new(app.config).call(**@credentials)
+    }).must_raise FaceCloak::AuthenticateAccount::ApiServerError
+  end
 end

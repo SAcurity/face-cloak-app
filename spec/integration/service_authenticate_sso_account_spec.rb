@@ -56,4 +56,14 @@ describe 'AuthenticateSsoAccount service' do
       FaceCloak::AuthenticateSsoAccount.new(app.config).call(**@payload)
     }).must_raise FaceCloak::AuthenticateSsoAccount::UnauthorizedError
   end
+
+  it 'SAD: treats missing SSO API route as an API server error' do
+    WebMock.stub_request(:post, "#{API_URL}/auth/sso")
+           .with(body: FaceCloak::SignedMessage.sign(@payload).to_json)
+           .to_return(status: 404, body: {}.to_json)
+
+    _(proc {
+      FaceCloak::AuthenticateSsoAccount.new(app.config).call(**@payload)
+    }).must_raise FaceCloak::AuthenticateSsoAccount::ApiServerError
+  end
 end

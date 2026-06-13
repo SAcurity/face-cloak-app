@@ -17,21 +17,18 @@ module FaceCloak
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def route_respond_face(routing, image_id, face_id, auth_token)
       routing.post do
-        return_view = safe_image_return_view(routing.params)
         RespondFaceAssignment.new(FaceCloak::App.config).call(
           face_id: face_id, cloak_type: routing.params['cloak_type'], auth_token: auth_token
         )
         flash[:notice] = 'Masking preference saved'
-        routing.redirect "/images/#{image_id}/#{return_view}"
+        routing.redirect "/images/#{image_id}/cloak"
       rescue StandardError => e
         flash[:error] = "Could not save masking preference: #{e.message}"
         routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def route_decline_face(routing, image_id, face_id, auth_token)
       routing.post do
@@ -56,7 +53,7 @@ module FaceCloak
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def route_assign_face(routing, image_id, face_id, auth_token)
       assignment_input = FaceCloak::Form::FaceAssignment.new.call(routing.params)
       if assignment_input.failure?
@@ -65,7 +62,7 @@ module FaceCloak
       end
 
       uid = assignment_input[:assigned_user_id].to_s.strip
-      uid = assigned_user_id_for_username(assignment_input[:assigned_username], auth_token) if uid.empty?
+      uid = assigned_user_id_for_username(assignment_input[:assigned_username]) if uid.empty?
       if uid.to_s.empty?
         flash[:error] = 'Choose a valid account from the list.'
         return routing.redirect "/images/#{image_id}/raw"
@@ -79,7 +76,7 @@ module FaceCloak
       end
 
       AssignFace.new(FaceCloak::App.config).call(face_id: face_id, assigned_user_id: uid, auth_token: auth_token)
-      
+
       if self_assign && !assignment_input[:cloak_type].to_s.empty?
         RespondFaceAssignment.new(FaceCloak::App.config).call(
           face_id: face_id,
@@ -87,7 +84,7 @@ module FaceCloak
           auth_token: auth_token
         )
         flash[:notice] = 'Masking preference saved'
-        routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
+        routing.redirect "/images/#{image_id}/cloak"
       else
         flash[:notice] = routing.params['action'] == 'remind' ? 'Notification sent' : 'Face assigned successfully'
         routing.redirect "/images/#{image_id}/raw"
@@ -96,9 +93,9 @@ module FaceCloak
       flash[:error] = "Could not assign face: #{e.message}"
       routing.redirect "/images/#{image_id}/raw"
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
-    def assigned_user_id_for_username(username, auth_token)
+    def assigned_user_id_for_username(username)
       target = FaceCloak::Account.normalize_username(username)
       return nil if target.empty?
 

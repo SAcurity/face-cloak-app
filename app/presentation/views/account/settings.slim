@@ -7,6 +7,7 @@
 - identity = is_admin || current_roles.include?('admin') ? 'Admin' : 'Member'
 - can_change_password = current_account.fetch('has_password', true) != false
 - api_key = defined?(api_key) ? api_key : nil
+- current_last_active_at = current_account['last_active_at'] || current_account['updated_at']
 
 div class="product-tile tile-white account-settings-page"
   div class="container account-settings-container"
@@ -17,12 +18,12 @@ div class="product-tile tile-white account-settings-page"
 
     ul class="nav nav-tabs settings-tabs" id="accountSettingsTabs" role="tablist"
       li class="nav-item" role="presentation"
-        button class="nav-link active" id="information-tab" data-bs-toggle="tab" data-bs-target="#information-pane" type="button" role="tab" aria-controls="information-pane" aria-selected="true" Information
+        button class="nav-link active" id="information-tab" data-bs-toggle="tab" data-bs-target="#information-pane" data-settings-tab="information" type="button" role="tab" aria-controls="information-pane" aria-selected="true" Information
       li class="nav-item" role="presentation"
-        button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab" aria-controls="security-pane" aria-selected="false" Security
+        button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" data-settings-tab="security" type="button" role="tab" aria-controls="security-pane" aria-selected="false" Security
       - if is_admin
         li class="nav-item" role="presentation"
-          button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-pane" type="button" role="tab" aria-controls="admin-pane" aria-selected="false"
+          button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-pane" data-settings-tab="admin" type="button" role="tab" aria-controls="admin-pane" aria-selected="false"
             span Management
             span class="admin-only-badge" Admin only
 
@@ -37,8 +38,14 @@ div class="product-tile tile-white account-settings-page"
             form action="/account/settings/username" method="post" class="account-status-row settings-status-form"
               label class="caption text-muted" for="settings-username" Username
               div class="settings-input-row"
-                input id="settings-username" name="username" type="text" class="form-control" value=FaceCloak::Account.handle_for(current_username) autocomplete="username"
+                div class="input-group"
+                  span class="input-group-text" @
+                  input id="settings-username" name="username" type="text" class="search-input form-control ps-3" placeholder="username" value=FaceCloak::Account.normalize_username(current_username) autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" data-username-availability-url="/auth/username_available" data-current-username=current_username aria-describedby="username-availability"
+                  span id="username-spinner" class="username-spinner" aria-hidden="true"
+                  button type="button" id="username-clear" class="input-clear" aria-label="Clear username" title="Clear username"
+                    i class="fas fa-times" aria-hidden="true"
                 button type="submit" class="btn btn-primary settings-action-button" Save
+              div id="username-availability" class="username-availability-message mt-2" aria-live="polite"
             div class="account-status-row"
               span Identity
               strong = identity
@@ -49,8 +56,8 @@ div class="product-tile tile-white account-settings-page"
               span Joined
               strong = current_account['created_at'].to_s.empty? ? '-' : format_time(current_account['created_at'])
             div class="account-status-row"
-              span Last updated
-              strong = current_account['updated_at'].to_s.empty? ? '-' : format_time(current_account['updated_at'])
+              span Last active
+              strong = current_last_active_at.to_s.empty? ? '-' : format_time(current_last_active_at)
 
       div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0"
         div class="settings-stack"
@@ -116,7 +123,7 @@ div class="product-tile tile-white account-settings-page"
                     th Identity
                     th Email
                     th Joined
-                    th Updated
+                    th Last active
                     th
                 tbody
                   - accounts.each do |account|
@@ -124,13 +131,22 @@ div class="product-tile tile-white account-settings-page"
                     - roles = Array(account['system_roles'] || account['roles']).map(&:to_s)
                     - role_label = roles.include?('admin') ? 'Admin' : 'Member'
                     - can_delete = account.dig('policies', 'can_delete')
+                    - is_current_account = username == current_username
+                    - last_active_at = account['last_active_at'] || account['updated_at']
                     tr
                       td = FaceCloak::Account.handle_for(username)
                       td
-                        span class="account-role-badge #{role_label == 'Admin' ? 'is-admin' : ''}" = role_label
+                        - if is_current_account
+                          span class="account-role-badge #{role_label == 'Admin' ? 'is-admin' : ''}" title="You cannot change your own identity" = role_label
+                        - else
+                          form action="/account/settings/#{username}/identity" method="post" class="account-identity-form"
+                            select name="identity" class="form-select form-select-sm account-identity-select" aria-label="Identity for #{FaceCloak::Account.handle_for(username)}"
+                              option value="member" selected=(role_label == 'Member') Member
+                              option value="admin" selected=(role_label == 'Admin') Admin
+                            button type="submit" class="btn btn-primary settings-action-button settings-action-button-sm" Save
                       td = account['email'].to_s.empty? ? '-' : account['email']
                       td = account['created_at'].to_s.empty? ? '-' : format_time(account['created_at'])
-                      td = account['updated_at'].to_s.empty? ? '-' : format_time(account['updated_at'])
+                      td = last_active_at.to_s.empty? ? '-' : format_time(last_active_at)
                       td class="text-end"
                         - if can_delete
                           form action="/account/settings/#{username}/delete" method="post" class="m-0" data-confirm-message="Delete #{FaceCloak::Account.handle_for(username)}? This cannot be undone."

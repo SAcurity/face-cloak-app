@@ -54,6 +54,57 @@ describe 'Regression: account API key is limited and self-view only' do
   end
 end
 
+describe 'Regression: account settings routes' do
+  it 'matches explicit username and password routes before account-delete wildcard' do
+    source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
+
+    username_position = source.index("routing.on('username')")
+    password_position = source.index("routing.on('password')")
+    delete_position = source.index('route_delete_account(routing)')
+
+    _(username_position).wont_be_nil
+    _(password_position).wont_be_nil
+    _(delete_position).wont_be_nil
+    _(username_position).must_be :<, delete_position
+    _(password_position).must_be :<, delete_position
+  end
+
+  it 'settings username editor reuses fixed-prefix availability UI' do
+    source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
+
+    _(source).must_include 'span class="input-group-text" @'
+    _(source).must_match(%r{data-username-availability-url="/auth/username_available"})
+    _(source).must_match(/data-current-username=current_username/)
+    _(source).wont_match(/value=FaceCloak::Account\.handle_for\(current_username\)/)
+  end
+
+  it 'username availability script treats the unchanged current username as valid' do
+    source = File.read(File.expand_path('../app/presentation/assets/js/modules/auth.js', __dir__))
+
+    _(source).must_match(/originalUsername/)
+    _(source).must_match(/This is your current username\./)
+    _(source).must_match(/lastCheckedUsername === username/)
+  end
+
+  it 'admin table can edit other account identity and labels activity clearly' do
+    source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
+    controller_source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
+    script_source = File.read(File.expand_path('../app/presentation/assets/js/modules/common-ui.js', __dir__))
+    current_last_active_fallback =
+      /current_last_active_at = current_account\['last_active_at'\] \|\| current_account\['updated_at'\]/
+
+    _(source).must_include 'th Last active'
+    _(source).must_include 'span Last active'
+    _(source).must_match(current_last_active_fallback)
+    _(source).must_match(%r{/account/settings/#\{username\}/identity})
+    _(source).must_match(/name="identity"/)
+    _(source).must_match(/You cannot change your own identity/)
+    _(source).must_match(/data-settings-tab="admin"/)
+    _(controller_source).must_match(%r{/account/settings\?tab=admin})
+    _(script_source).must_match(/settings-tabs/)
+  end
+end
+
 describe 'Regression: SSO-only accounts do not show password form' do
   it 'settings view gates Change password on has_password' do
     source = File.read(File.expand_path('../app/presentation/views/account/settings.slim', __dir__))
@@ -113,8 +164,10 @@ describe 'Regression: assigned faces remain revisitable after response' do
 
   it 'response mode only exposes faces assigned to the current account' do
     source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+    assigned_filter = 'my_assigned_faces = faces.select { |face| ' \
+                      'face_assigned_to?(face, current_username, current_account_id) }'
 
-    _(source).must_include 'my_assigned_faces = faces.select { |face| face_assigned_to?(face, current_username, current_account_id) }'
+    _(source).must_include assigned_filter
     _(source).wont_match(/my_assigned_faces = .*can_respond/)
   end
 
@@ -125,6 +178,42 @@ describe 'Regression: assigned faces remain revisitable after response' do
     _(source).must_match(/can_manage_all_faces = is_owner && \(current_is_image_owner \|\| current_is_admin\)/)
     _(source).must_include "assignment_mode = can_manage_all_faces && view_type == 'raw'"
     _(route_source).wont_match(/policies\.can_manage_faces \|\|/)
+  end
+
+  it 'self-assignment with a cloak choice returns to the cloaked image' do
+    source = File.read(File.expand_path('../app/controllers/images.rb', __dir__))
+    cloak_redirect = "routing.redirect \"/images/\#{image_id}/cloak\""
+
+    _(source.scan(cloak_redirect).length).must_be :>=, 2
+  end
+
+  it 'profile assigned images are filtered by actual face assignment' do
+    source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
+
+    _(source).must_match(/image_assigned_to_current\?/)
+    _(source).wont_match(/else\s+assigned_images << img/)
+  end
+
+  it 'profile assignment filter handles parsed Face objects' do
+    account = FaceCloak::Account.from_api({ 'attributes' => { 'id' => 7, 'username' => 'alice' } }, 'token')
+    image = FaceCloak::Image.from_api(
+      'attributes' => { 'id' => 'img-1', 'owner' => { 'id' => 2, 'username' => 'bob' } },
+      'faces' => [{ 'assigned_user_id' => 7, 'assigned_user' => { 'username' => 'alice' } }]
+    )
+    app_instance = FaceCloak::App.new({})
+    app_instance.instance_variable_set(:@current_account, account)
+
+    _(app_instance.send(:image_assigned_to_current?, image)).must_equal true
+  end
+
+  it 'assigned profile links preserve the assigned tab as the back target' do
+    view_source = File.read(File.expand_path('../app/presentation/views/account/show.slim', __dir__))
+    script_source = File.read(File.expand_path('../app/presentation/assets/js/modules/common-ui.js', __dir__))
+
+    _(view_source).must_match(/data-profile-tab="assigned"/)
+    _(view_source).must_match(/data-profile-image-link="assigned"/)
+    _(script_source).must_match(/profile-tabs/)
+    _(script_source).must_match(/tab=assigned/)
   end
 end
 
@@ -161,7 +250,7 @@ describe 'Regression: username assignment accepts exact handles' do
   it 'face assignment form posts the typed username as a fallback' do
     source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
 
-    _(source.scan(/name="assigned_username"/).length).must_be :>=, 2
+    _(source.scan('name="assigned_username"').length).must_be :>=, 2
   end
 
   it 'face assignment script resolves exact handle matches before submit' do

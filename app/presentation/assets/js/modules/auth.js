@@ -23,6 +23,7 @@
     if (!input || !message) return;
 
     const endpoint = input.getAttribute('data-username-availability-url');
+    const originalUsername = normalizeUsername(input.getAttribute('data-current-username') || '');
     const serverError = document.querySelector('.server-username-error');
     const clearBtn = document.getElementById('username-clear');
     const spinner = document.getElementById('username-spinner');
@@ -30,6 +31,7 @@
     let requestId = 0;
     let currentState = null;
     let lastCheckPromise = null;
+    let lastCheckedUsername = null;
 
     function showGlobalLoading(text) {
       const overlay = document.getElementById('global-loading-overlay');
@@ -79,8 +81,18 @@
         return Promise.resolve({ ok: true, available: false });
       }
 
+      if (originalUsername && username === originalUsername) {
+        requestId += 1;
+        lastCheckedUsername = username;
+        currentState = 'available';
+        setAvailability('available', 'This is your current username.');
+        lastCheckPromise = Promise.resolve({ ok: true, available: true, unchanged: true });
+        return lastCheckPromise;
+      }
+
       requestId += 1;
       const thisRequest = requestId;
+      lastCheckedUsername = username;
       currentState = 'checking';
       setAvailability('checking', 'Checking username...');
       if (spinner) spinner.classList.add('visible');
@@ -171,7 +183,7 @@
       performCheck(username);
     });
 
-    const form = document.getElementById('form-register-confirm');
+    const form = input.closest('form') || document.getElementById('form-register-confirm');
     if (form) {
       form.addEventListener('submit', function(e) {
         if (currentState === 'available') return true;
@@ -185,7 +197,7 @@
         }
 
         showGlobalLoading('Checking username...');
-        const checkPromise = lastCheckPromise || performCheck(username);
+        const checkPromise = lastCheckedUsername === username && lastCheckPromise ? lastCheckPromise : performCheck(username);
         checkPromise.then(function(result) {
           if (result && result.available) {
             form.submit();

@@ -52,6 +52,16 @@ module FaceCloak
       routing.redirect '/account/settings'
     end
 
+    def update_identity_response(routing, target_username)
+      target = FaceCloak::Account.normalize_username(target_username)
+      update_identity(target, routing.params['identity'])
+      flash[:notice] = 'Identity updated'
+      routing.redirect '/account/settings?tab=admin'
+    rescue StandardError => e
+      flash[:error] = "Could not update identity: #{e.message}"
+      routing.redirect '/account/settings?tab=admin'
+    end
+
     def render_account_settings
       status_data = ListAccountStatuses.new(App.config).call(auth_token: @current_account.auth_token)
       view 'account/settings',
@@ -86,6 +96,16 @@ module FaceCloak
       )
     end
 
+    def update_identity(username, identity)
+      raise ArgumentError, 'Admins cannot change their own identity' if username == @current_account.username
+
+      UpdateAccount.new(App.config).call(
+        username: username,
+        updates: { identity: identity.to_s },
+        auth_token: @current_account.auth_token
+      )
+    end
+
     def password_updates(params)
       {
         current_password: params['current_password'].to_s,
@@ -108,14 +128,15 @@ module FaceCloak
     def route_account_settings(routing)
       require_login!(routing)
 
-      route_delete_account(routing)
       routing.on('username') { routing.post { update_username_response(routing) } }
       routing.on('password') { routing.post { update_password_response(routing) } }
+      route_delete_account(routing)
       account_settings_response(routing)
     end
 
     def route_delete_account(routing)
       routing.on String do |target_username|
+        routing.on('identity') { routing.post { update_identity_response(routing, target_username) } }
         routing.on('delete') { routing.post { delete_account_response(routing, target_username) } }
       end
     end
@@ -131,9 +152,41 @@ module FaceCloak
     end
   end
 
+  # Helpers for current-account profile image buckets.
+  module AccountProfileActions
+    private
+
+    def account_profile_images(auth_token)
+      image_lookup = GetImage.new(App.config)
+      images = ListImages.new(App.config).call(auth_token: auth_token)
+      images.each_with_object({ owned: [], assigned: [] }) do |img, grouped|
+        append_profile_image(grouped, img, image_lookup, auth_token)
+      end
+    end
+
+    def append_profile_image(grouped, image, image_lookup, auth_token)
+      if image.owner_id.to_s == @current_account.id.to_s
+        grouped[:owned] << image
+      elsif image_assigned_to_current?(image_lookup.call(image.id, auth_token: auth_token))
+        grouped[:assigned] << image
+      end
+    end
+
+    def image_assigned_to_current?(image)
+      current_user_id = @current_account.id.to_s
+      current_username = FaceCloak::Account.normalize_username(@current_account.username).downcase
+      Array(image&.faces).any? do |face|
+        assigned_user = face['assigned_user'] || {}
+        face['assigned_user_id'].to_s == current_user_id ||
+          FaceCloak::Account.normalize_username(assigned_user['username']).downcase == current_username
+      end
+    end
+  end
+
   # Web controller for the FaceCloak Web App
   class App < Roda
     include AccountSettingsRoute
+    include AccountProfileActions
 
     route('account') do |routing|
       routing.on('settings') { route_account_settings(routing) }
@@ -215,23 +268,12 @@ module FaceCloak
         routing.get do
           if username == @current_account.username
             begin
-              images = ListImages.new(App.config).call(auth_token: @current_account.auth_token)
-
-              owned_images = []
-              assigned_images = []
-              current_user_id = @current_account.id.to_s
-
-              images.each do |img|
-                if img.owner_id.to_s == current_user_id
-                  owned_images << img
-                else
-                  assigned_images << img
-                end
-              end
+              profile_images = account_profile_images(@current_account.auth_token)
 
               view 'account/show',
-                   locals: { username: @current_account.handle, owned_images: owned_images,
-                             assigned_images: assigned_images }
+                   locals: { username: @current_account.handle,
+                             owned_images: profile_images[:owned],
+                             assigned_images: profile_images[:assigned] }
             rescue ApiClient::ApiError => e
               raise unless stale_session_error?(e)
 
