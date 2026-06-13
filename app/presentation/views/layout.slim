@@ -15,68 +15,70 @@ html
     == assets(:css)
   body class="d-flex flex-column"
     - current_path = @routing.path.to_s
+    - auth_standalone_path = ['/auth/login', '/auth/register', '/auth/email_verification'].include?(current_path) || current_path.start_with?('/auth/register/') || (current_path == '/' && !@current_account)
     - scrollable_content = current_path == '/' || current_path.start_with?('/images', '/account')
-    - auth_standalone_path = ['/auth/login', '/auth/register', '/auth/email_verification'].include?(current_path) || current_path.start_with?('/auth/register/')
     - account_profile_path = current_path.start_with?('/account/') && current_path != '/account/usernames'
     - header_navigation = @routing.params['from'].to_s == 'header'
     - show_back_button = current_path != '/' && !auth_standalone_path && !account_profile_path && !header_navigation
-    / Main Nav (Frosted Black)
-    nav class="sub-nav"
-      div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
-        / Left: Home
-        div class="nav-left position-absolute d-flex align-items-center header-edge-offset"
-          a href="/" class="home-nav-pill"
-            i class="fas fa-house" aria-hidden="true"
-            span class="body-strong" Home
+    - show_site_header = !auth_standalone_path
+    - if show_site_header
+      / Main Nav (Frosted Black)
+      nav class="sub-nav"
+        div class="container px-4 px-lg-5 d-flex align-items-center position-relative"
+          / Left: Home
+          div class="nav-left position-absolute d-flex align-items-center header-edge-offset"
+            a href="/" class="home-nav-pill"
+              i class="fas fa-house" aria-hidden="true"
+              span class="body-strong" Home
 
-        / Center: Logo
-        div class="nav-center mx-auto"
-          a class="navbar-brand text-white fw-bold m-0 brand-logo" href="/" FaceCloak
+          / Center: Logo
+          div class="nav-center mx-auto"
+            a class="navbar-brand text-white fw-bold m-0 brand-logo" href="/" FaceCloak
 
-        / Right: Post & Avatar
-        div class="nav-right position-absolute d-flex align-items-center header-edge-offset"
-          - if @current_account
-            - nav_notifications = assignment_notifications(@current_account)
-            - nav_notification_count = nav_notifications.length
-            - notification_scope = @current_account.id.to_s.empty? ? @current_account.username.to_s : @current_account.id.to_s
-            a href="/images/new?from=header" class="btn btn-primary stable-primary-button nav-upload-button"
-              i class="fas fa-plus stable-button-icon" aria-hidden="true"
-              span class="stable-button-label nav-upload-label" Upload
-            a href="/account/#{@current_account.username}?from=header" class="text-decoration-none"
-              == avatar_for(@current_account.username, size: 32)
-            div class="notification-menu" data-notification-menu=true data-notification-scope=notification_scope
-              button type="button" class="nav-icon-button notification-trigger" title="Notifications" aria-label="Notifications" aria-expanded="false" data-notification-trigger=true
-                i class="fas fa-bell" aria-hidden="true"
-                span class="notification-count" data-notification-count=true hidden=nav_notification_count.zero? = nav_notification_count
-              div class="notification-panel" data-notification-panel=true
-                div class="notification-panel-header"
-                  div class="notification-panel-title"
-                    span Notifications
-                    span class="caption text-muted" data-notification-summary=true #{nav_notification_count} unread
+          / Right: Post & Avatar
+          div class="nav-right position-absolute d-flex align-items-center header-edge-offset"
+            - if @current_account
+              - nav_notifications = assignment_notifications(@current_account)
+              - nav_notification_count = nav_notifications.length
+              - notification_scope = @current_account.id.to_s.empty? ? @current_account.username.to_s : @current_account.id.to_s
+              a href="/images/new?from=header" class="btn btn-primary stable-primary-button nav-upload-button"
+                i class="fas fa-plus stable-button-icon" aria-hidden="true"
+                span class="stable-button-label nav-upload-label" Upload
+              a href="/account/#{@current_account.username}?from=header" class="text-decoration-none"
+                == avatar_for(@current_account.username, size: 32)
+              div class="notification-menu" data-notification-menu=true data-notification-scope=notification_scope
+                button type="button" class="nav-icon-button notification-trigger" title="Notifications" aria-label="Notifications" aria-expanded="false" data-notification-trigger=true
+                  i class="fas fa-bell" aria-hidden="true"
+                  span class="notification-count" data-notification-count=true hidden=nav_notification_count.zero? = nav_notification_count
+                div class="notification-panel" data-notification-panel=true
+                  div class="notification-panel-header"
+                    div class="notification-panel-title"
+                      span Notifications
+                      span class="caption text-muted" data-notification-summary=true #{nav_notification_count} unread
+                    - if nav_notifications.any?
+                      div class="notification-actions"
+                        button type="button" data-notification-read-all=true Read All
                   - if nav_notifications.any?
-                    div class="notification-actions"
-                      button type="button" data-notification-read-all=true Read All
-                - if nav_notifications.any?
-                  div class="notification-list"
-                    - nav_notifications.each do |item|
-                      - notification_id = "#{item[:image_id]}:#{item[:face_id]}"
-                      a href="#{item[:path]}?from=header" class="notification-item" data-notification-item=true data-notification-id=notification_id
-                        span class="notification-item-icon"
-                          i class="fas fa-user-shield" aria-hidden="true"
-                        span class="notification-item-text"
-                          strong Face #{item[:face_number]} needs your response
-                          small Assigned by #{item[:owner]}
-                - else
-                  div class="notification-empty" No pending assignments.
-            a href="/account/settings?from=header" class="nav-icon-button" title="Account settings" aria-label="Account settings"
-              i class="fas fa-gear" aria-hidden="true"
-            a href="/auth/logout" class="nav-icon-button" title="Log out" aria-label="Log out"
-              i class="fas fa-right-from-bracket" aria-hidden="true"
-          - else
-            a class="nav-auth-link" href="/auth/register" Register
-            a class="nav-auth-login" href="/auth/login" Login
+                    div class="notification-list"
+                      - nav_notifications.each do |item|
+                        - notification_id = "#{item[:image_id]}:#{item[:face_id]}"
+                        a href="#{item[:path]}?from=header" class="notification-item" data-notification-item=true data-notification-id=notification_id
+                          span class="notification-item-icon"
+                            i class="fas fa-user-shield" aria-hidden="true"
+                          span class="notification-item-text"
+                            strong Face #{item[:face_number]} needs your response
+                            small Assigned by #{item[:owner]}
+                  - else
+                    div class="notification-empty" No pending assignments.
+              a href="/account/settings?from=header" class="nav-icon-button" title="Account settings" aria-label="Account settings"
+                i class="fas fa-gear" aria-hidden="true"
+              a href="/auth/logout" class="nav-icon-button" title="Log out" aria-label="Log out"
+                i class="fas fa-right-from-bracket" aria-hidden="true"
+            - else
+              a class="nav-auth-link" href="/auth/register" Register
+              a class="nav-auth-login" href="/auth/login" Login
 
-    main id="main-content" class=(scrollable_content ? 'is-scrollable' : 'is-contained')
+    main id="main-content" class=(auth_standalone_path ? 'is-contained auth-main' : (scrollable_content ? 'is-scrollable' : 'is-contained'))
       div class='container-fluid p-0' id='html_body'
         - if show_back_button
           div class="container pt-4 pb-0 text-start"
@@ -93,7 +95,7 @@ html
       div class="container"
         small
           | FaceCloak is made for privacy demonstration purposes.
-          span class="footer-divider"  &middot; 
+          span class="footer-divider"  &middot;
           | &copy; 2026 FaceCloak. All rights reserved.
 
     / Global loading overlay

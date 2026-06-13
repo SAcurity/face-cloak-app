@@ -41,6 +41,8 @@ module FaceCloak
 
       # GET /
       routing.root do
+        next view 'login' unless @current_account
+
         query = routing.params['query'].to_s.strip
         normalized_query = query.downcase
         begin

@@ -26,6 +26,50 @@ describe 'Regression: Google SSO routes are wired through redirect callback flow
   end
 end
 
+describe 'Regression: standalone auth presentation' do
+  it 'login and registration pages use the classic auth layout' do
+    %w[login register register_confirm].each do |view_name|
+      source = File.read(File.expand_path("../app/presentation/views/#{view_name}.slim", __dir__))
+
+      _(source).must_include 'auth-classic-page'
+      _(source).must_include 'auth-classic-hero'
+      _(source).must_include 'auth-classic-form-section'
+      _(source).wont_include 'auth-visual-icon'
+      _(source).wont_include 'auth-story-stack'
+    end
+  end
+
+  it 'standalone auth pages hide the header, keep the footer, and avoid scroll pages' do
+    source = File.read(File.expand_path('../app/presentation/views/layout.slim', __dir__))
+
+    _(source).wont_match(/scrollable_content = auth_standalone_path \|\|/)
+    _(source).must_match(/auth_standalone_path \? 'is-contained auth-main'/)
+    _(source).must_match(/show_site_header = !auth_standalone_path/)
+    _(source).must_match(%r{current_path == '/' && !@current_account})
+    _(source).must_match(/footer class="site-footer/)
+  end
+
+  it 'unauthenticated root renders the auth entry screen' do
+    source = File.read(File.expand_path('../app/controllers/app.rb', __dir__))
+
+    _(source).must_match(/routing\.root do\n\s+next view 'login' unless @current_account/)
+  end
+
+  it 'classic auth keeps error borders on pill field wrappers' do
+    source = File.read(File.expand_path('../app/presentation/assets/css/style.css', __dir__))
+
+    _(source).must_match(/\.auth-classic-page \.input-group:has\(\.auth-input-error\)/)
+    _(source).must_match(/\.auth-classic-page \.password-field:has\(\.auth-input-error\)/)
+  end
+
+  it 'login validation keeps the entered username visible' do
+    post '/auth/login', username: '@alice', password: ''
+
+    _(last_response.status).must_equal 400
+    _(last_response.body).must_include 'value="alice"'
+  end
+end
+
 describe 'Regression: account API key is limited and self-view only' do
   it 'account controller passes api_key from fetched settings account' do
     source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
@@ -102,6 +146,12 @@ describe 'Regression: account settings routes' do
     _(source).must_match(/data-settings-tab="admin"/)
     _(controller_source).must_match(%r{/account/settings\?tab=admin})
     _(script_source).must_match(/settings-tabs/)
+  end
+
+  it 'password updates return to the security tab' do
+    source = File.read(File.expand_path('../app/controllers/account.rb', __dir__))
+
+    _(source.scan('/account/settings?tab=security').length).must_be :>=, 2
   end
 end
 
