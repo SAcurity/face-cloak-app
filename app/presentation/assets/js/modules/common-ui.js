@@ -85,6 +85,54 @@
     if (!isImageDetail) window.sessionStorage.setItem(previousPageKey, currentPath);
   });
 
+  app.registerInitializer('profile-tabs', function() {
+    const tabButtons = Array.from(document.querySelectorAll('[data-profile-tab]'));
+    if (!tabButtons.length) return;
+
+    const previousPageKey = 'facecloak.previousPage';
+    const params = new URLSearchParams(window.location.search);
+    const requestedTab = params.get('tab');
+
+    function accountTabUrl(tabName) {
+      return window.location.pathname + (tabName === 'assigned' ? '?tab=assigned' : '');
+    }
+
+    function activateRequestedTab() {
+      if (requestedTab !== 'assigned') return;
+
+      const tab = document.querySelector('[data-profile-tab="assigned"]');
+      if (tab && window.bootstrap) window.bootstrap.Tab.getOrCreateInstance(tab).show();
+    }
+
+    tabButtons.forEach(function(button) {
+      button.addEventListener('shown.bs.tab', function() {
+        const tabName = button.getAttribute('data-profile-tab');
+        window.history.replaceState(null, '', accountTabUrl(tabName));
+        window.sessionStorage.setItem(previousPageKey, accountTabUrl(tabName));
+      });
+    });
+
+    document.querySelectorAll('[data-profile-image-link]').forEach(function(link) {
+      link.addEventListener('click', function() {
+        window.sessionStorage.setItem(previousPageKey, accountTabUrl(link.getAttribute('data-profile-image-link')));
+      });
+    });
+
+    activateRequestedTab();
+  });
+
+  app.registerInitializer('settings-tabs', function() {
+    const tabButtons = Array.from(document.querySelectorAll('[data-settings-tab]'));
+    if (!tabButtons.length) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedTab = params.get('tab');
+    if (!requestedTab) return;
+
+    const tab = document.querySelector('[data-settings-tab="' + requestedTab + '"]');
+    if (tab && window.bootstrap) window.bootstrap.Tab.getOrCreateInstance(tab).show();
+  });
+
   app.registerInitializer('copy-buttons', function() {
     function fallbackCopy(text) {
       const textarea = document.createElement('textarea');

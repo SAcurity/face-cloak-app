@@ -57,6 +57,7 @@ module FaceCloak
       {
         'created_at' => attrs['created_at'] || account['created_at'],
         'updated_at' => attrs['updated_at'] || account['updated_at'],
+        'last_active_at' => attrs['last_active_at'] || account['last_active_at'],
         'policies' => account['policies'] || {}
       }
     end

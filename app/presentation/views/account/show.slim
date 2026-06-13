@@ -10,12 +10,12 @@ div class="product-tile tile-white account-profile-tile"
     
     ul class="nav nav-tabs justify-content-center mb-4 profile-nav-tabs" id="profileTabs" role="tablist"
       li class="nav-item" role="presentation"
-        button class="nav-link active d-flex align-items-center gap-2" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts-tab-pane" type="button" role="tab" aria-controls="posts-tab-pane" aria-selected="true"
+        button class="nav-link active d-flex align-items-center gap-2" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts-tab-pane" data-profile-tab="posts" type="button" role="tab" aria-controls="posts-tab-pane" aria-selected="true"
           i class="fas fa-grid-2" aria-hidden="true"
           i class="fas fa-images"
           span My Posts
       li class="nav-item" role="presentation"
-        button class="nav-link d-flex align-items-center gap-2" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned-tab-pane" type="button" role="tab" aria-controls="assigned-tab-pane" aria-selected="false"
+        button class="nav-link d-flex align-items-center gap-2" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned-tab-pane" data-profile-tab="assigned" type="button" role="tab" aria-controls="assigned-tab-pane" aria-selected="false"
           i class="fas fa-user-tag"
           span Assigned to Me
 
@@ -25,7 +25,7 @@ div class="product-tile tile-white account-profile-tile"
           div class="home-feed-grid profile-feed-grid"
             - owned_images.each do |img|
               article class="feed-card"
-                a href="/images/#{img.id}" class="feed-card-image-link"
+                a href="/images/#{img.id}" class="feed-card-image-link" data-profile-image-link="posts"
                   img src="/images/#{img.id}/cloak" class="feed-card-image lazy-media" alt="Post thumbnail" loading="lazy" decoding="async"
         - else
           div class="text-center py-5 w-100"
@@ -38,7 +38,7 @@ div class="product-tile tile-white account-profile-tile"
           div class="home-feed-grid profile-feed-grid"
             - assigned_images.each do |img|
               article class="feed-card"
-                a href="/images/#{img.id}" class="feed-card-image-link"
+                a href="/images/#{img.id}" class="feed-card-image-link" data-profile-image-link="assigned"
                   img src="/images/#{img.id}/cloak" class="feed-card-image lazy-media" alt="Assigned image thumbnail" loading="lazy" decoding="async"
         - else
           div class="text-center py-5 w-100"
