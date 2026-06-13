@@ -1,27 +1,35 @@
-div class="auth-page row justify-content-center"
-  div class="col-12 col-md-6 col-lg-4"
-    div class="text-center mb-5"
-      h1 class="display-md" Register
+div class="auth-page auth-classic-page"
+  section class="auth-classic-hero"
+    a class="auth-corner-brand" href="/" FaceCloak
+    h1
+      | Privacy, reimagined.
+      br
+      | Create your trusted identity.
+    p Start with an email, then choose the account name people will assign faces to.
 
-    div class="store-utility-card"
-      - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
-      - email_error = errors[:email]
+  section class="auth-classic-form-section"
+    div class="auth-form-shell"
+      h1 class="auth-form-title" Create your FaceCloak account
 
-      form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
-        div class="form-group mb-4"
-          label for='input-email' class="caption-strong mb-2 d-block" Email
-          input type='email' name='email' id='input-email' class="search-input w-100 ps-3 #{email_error ? 'auth-input-error' : ''}" placeholder="name@domain.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
-          - if email_error
-            div class="auth-field-message mt-2"
-              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
-              span = email_error
+      div class="store-utility-card auth-form-card"
+        - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
+        - email_error = errors[:email]
 
-        div class="text-center mt-5"
-          button type='submit' id='button-register' value='register' class="btn btn-primary btn-large w-100"
-            i class="far fa-envelope me-2" aria-hidden="true"
-            | Continue with Email
+        form method='post' action='/auth/register' id='form-register' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
+          div class="form-group mb-4"
+            label for='input-email' class="caption-strong mb-2 d-block" Email
+            input type='email' name='email' id='input-email' class="search-input w-100 ps-3 #{email_error ? 'auth-input-error' : ''}" placeholder="name@domain.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+            - if email_error
+              div class="auth-field-message mt-2"
+                i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+                span = email_error
 
-    div class="text-center mt-5"
-      p class="caption text-muted"
-        | Already have an account?
-        a class="text-primary text-decoration-none ms-1" href="/auth/login" Sign in
+          div class="text-center mt-5"
+            button type='submit' id='button-register' value='register' class="btn btn-primary btn-large w-100"
+              i class="far fa-envelope me-2" aria-hidden="true"
+              | Continue with Email
+
+      div class="text-center mt-5"
+        p class="caption text-muted"
+          | Already have an account?
+          a class="text-primary text-decoration-none ms-1" href="/auth/login" Sign in

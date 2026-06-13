@@ -46,10 +46,10 @@ module FaceCloak
     def update_password_response(routing)
       update_password(routing.params)
       flash[:notice] = 'Password updated'
-      routing.redirect '/account/settings'
+      routing.redirect '/account/settings?tab=security'
     rescue StandardError => e
       flash[:error] = "Could not update password: #{e.message}"
-      routing.redirect '/account/settings'
+      routing.redirect '/account/settings?tab=security'
     end
 
     def update_identity_response(routing, target_username)

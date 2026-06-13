@@ -245,7 +245,7 @@ module FaceCloak
           if login_input.failure?
             flash.now[:error] = FaceCloak::Form.validation_errors(login_input)
             response.status = 400
-            next view(:login)
+            next view(:login, locals: { username: routing.params['username'].to_s })
           end
 
           # Use to_h to ensure we have a clean hash for service call
@@ -263,7 +263,7 @@ module FaceCloak
         rescue AuthenticateAccount::UnauthorizedError
           flash.now[:error] = { username: '', password: 'Login failed. Check your username and password.' }
           response.status = 400
-          view :login
+          view(:login, locals: { username: routing.params['username'].to_s })
         rescue AuthenticateAccount::ApiServerError => e
           App.logger.warn "API server error: #{e.inspect}"
           flash[:error] = 'Our servers are not responding -- please try later'
@@ -274,7 +274,7 @@ module FaceCloak
           App.logger.error "LOGIN CRASHED: #{e.class} - #{e.message}\n#{e.backtrace[0..5].join("\n")}"
           flash.now[:error] = { username: '', password: 'Login failed. Check your username and password.' }
           response.status = 400
-          view :login
+          view(:login, locals: { username: routing.params['username'].to_s })
         end
       end
 

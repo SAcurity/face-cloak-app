@@ -1,59 +1,66 @@
-div class="auth-page auth-page-compact row justify-content-center"
-  div class="col-12 col-md-6 col-lg-4"
-    div class="text-center auth-page-heading mb-5"
-      h1 class="display-md" Complete Your Registration
+div class="auth-page auth-page-compact auth-classic-page"
+  section class="auth-classic-hero"
+    a class="auth-corner-brand" href="/" FaceCloak
+    h1
+      | Finish setup.
+      br
+      | Keep control.
+    p Choose a username and password to complete your FaceCloak account.
 
-    div class="store-utility-card"
-      - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
-      - username_error = errors[:username] || (defined?(username_error) ? username_error : nil)
-      - password_error = errors[:password] || (defined?(password_error) ? password_error : nil)
-      - password_confirm_error = errors[:password_confirm] || (defined?(password_confirm_error) ? password_confirm_error : nil)
-      - password_has_error = !!password_error
-      - password_confirm_has_error = !!password_confirm_error
+  section class="auth-classic-form-section"
+    div class="auth-form-shell"
+      h1 class="auth-form-title" Complete your registration
 
-      form method='post' action="/account/#{registration_token}" id='form-register-confirm' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
+      div class="store-utility-card auth-form-card"
+        - errors = (flash[:error].is_a?(Hash) ? flash[:error] : {})
+        - username_error = errors[:username] || (defined?(username_error) ? username_error : nil)
+        - password_error = errors[:password] || (defined?(password_error) ? password_error : nil)
+        - password_confirm_error = errors[:password_confirm] || (defined?(password_confirm_error) ? password_confirm_error : nil)
+        - password_has_error = !!password_error
+        - password_confirm_has_error = !!password_confirm_error
 
-        div class="form-group mb-4"
-          label class="caption-strong mb-2 d-block" Verified email
-          div class="verified-email-field"
-            i class="fas fa-lock" aria-hidden="true"
-            span = email
+        form method='post' action="/account/#{registration_token}" id='form-register-confirm' accept-charset="UTF-8" autocomplete="on" novalidate="novalidate"
+          div class="form-group mb-4"
+            label class="caption-strong mb-2 d-block" Verified email
+            div class="verified-email-field"
+              i class="fas fa-lock" aria-hidden="true"
+              span = email
 
-        div class="form-group mb-4"
-          label for='input-username' class="caption-strong mb-2 d-block" Username
-          div class="input-group"
-            span class="input-group-text" @
-            input type='text' name='username' id='input-username' class="search-input form-control ps-3 #{username_error ? 'auth-input-error' : ''}" placeholder="username" value=FaceCloak::Account.normalize_username(username) autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" data-username-availability-url="/auth/username_available" aria-invalid=(username_error ? 'true' : 'false') aria-describedby=(username_error ? 'username-error username-availability' : 'username-availability')
-            span id="username-spinner" class="username-spinner" aria-hidden="true"
-            button type="button" id="username-clear" class="input-clear" aria-label="Clear username" title="Clear username"
-              | ×
-          - if username_error
-            div id="username-error" class="auth-field-message mt-2 server-username-error"
-              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
-              span = username_error
-          div id="username-availability" class="username-availability-message mt-2" aria-live="polite"
+          div class="form-group mb-4"
+            label for='input-username' class="caption-strong mb-2 d-block" Username
+            div class="input-group"
+              span class="input-group-text" @
+              input type='text' name='username' id='input-username' class="search-input form-control ps-3 #{username_error ? 'auth-input-error' : ''}" placeholder="username" value=FaceCloak::Account.normalize_username(username) autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" data-username-availability-url="/auth/username_available" aria-invalid=(username_error ? 'true' : 'false') aria-describedby=(username_error ? 'username-error username-availability' : 'username-availability')
+              span id="username-spinner" class="username-spinner" aria-hidden="true"
+              button type="button" id="username-clear" class="input-clear" aria-label="Clear username" title="Clear username"
+                i class="fas fa-times" aria-hidden="true"
+            - if username_error
+              div id="username-error" class="auth-field-message mt-2 server-username-error"
+                i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+                span = username_error
+            div id="username-availability" class="username-availability-message mt-2" aria-live="polite"
 
-        div class="form-group mb-4"
-          label for='input-password' class="caption-strong mb-2 d-block" Password
-          div class="password-field"
-            input type='password' name='password' id='input-password' class="search-input w-100 ps-3 #{password_has_error ? 'auth-input-error' : ''}" placeholder="Password" autocomplete="new-password" aria-invalid=(password_has_error ? 'true' : 'false') aria-describedby=(password_error ? 'password-error' : nil)
-            button type='button' class="password-toggle" data-toggle-password="#input-password" aria-controls="input-password" aria-label="Show password"
-              i class="fas fa-eye-slash" aria-hidden="true"
-          - if password_error
-            div id="password-error" class="auth-field-message mt-2"
-              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
-              span = password_error
+          div class="form-group mb-4"
+            label for='input-password' class="caption-strong mb-2 d-block" Password
+            div class="password-field"
+              input type='password' name='password' id='input-password' class="search-input w-100 ps-3 #{password_has_error ? 'auth-input-error' : ''}" placeholder="Password" autocomplete="new-password" aria-invalid=(password_has_error ? 'true' : 'false') aria-describedby=(password_error ? 'password-error' : nil)
+              button type='button' class="password-toggle" data-toggle-password="#input-password" aria-controls="input-password" aria-label="Show password"
+                i class="fas fa-eye-slash" aria-hidden="true"
+            - if password_error
+              div id="password-error" class="auth-field-message mt-2"
+                i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+                span = password_error
 
-        div class="form-group mb-4"
-          label for='input-password-confirm' class="caption-strong mb-2 d-block" Confirm password
-          div class="password-field"
-            input type='password' name='password_confirm' id='input-password-confirm' class="search-input w-100 ps-3 #{password_confirm_has_error ? 'auth-input-error' : ''}" placeholder="Confirm password" autocomplete="new-password" aria-invalid=(password_confirm_has_error ? 'true' : 'false') aria-describedby=(password_confirm_error ? 'password-confirm-error' : nil)
-            button type='button' class="password-toggle" data-toggle-password="#input-password-confirm" aria-controls="input-password-confirm" aria-label="Show password"
-              i class="fas fa-eye-slash" aria-hidden="true"
-          - if password_confirm_error
-            div id="password-confirm-error" class="auth-field-message mt-2"
-              i class="fas fa-exclamation-circle me-2" aria-hidden="true"
-              span = password_confirm_error
+          div class="form-group mb-4"
+            label for='input-password-confirm' class="caption-strong mb-2 d-block" Confirm password
+            div class="password-field"
+              input type='password' name='password_confirm' id='input-password-confirm' class="search-input w-100 ps-3 #{password_confirm_has_error ? 'auth-input-error' : ''}" placeholder="Confirm password" autocomplete="new-password" aria-invalid=(password_confirm_has_error ? 'true' : 'false') aria-describedby=(password_confirm_error ? 'password-confirm-error' : nil)
+              button type='button' class="password-toggle" data-toggle-password="#input-password-confirm" aria-controls="input-password-confirm" aria-label="Show password"
+                i class="fas fa-eye-slash" aria-hidden="true"
+            - if password_confirm_error
+              div id="password-confirm-error" class="auth-field-message mt-2"
+                i class="fas fa-exclamation-circle me-2" aria-hidden="true"
+                span = password_confirm_error
 
-        div class="text-center mt-5"
-          button type='submit' id='button-register-confirm' class="btn btn-primary btn-large w-100" Create Account
+          div class="text-center mt-5"
+            button type='submit' id='button-register-confirm' class="btn btn-primary btn-large w-100" Create Account
