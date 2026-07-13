@@ -29,18 +29,17 @@ module FaceCloak
     private
 
     def account_assignment_notifications(account)
-      account.face_assignments.filter_map.with_index do |assignment, index|
+      account.face_assignments.filter_map do |assignment|
         next unless pending_assignment?(assignment)
 
-        account_assignment_notification(assignment, index)
+        account_assignment_notification(assignment)
       end.first(MAX_NAV_NOTIFICATIONS)
     end
 
-    def account_assignment_notification(assignment, index)
+    def account_assignment_notification(assignment)
       {
         image_id: assignment['image_id'].to_s,
         face_id: assignment['face_id'].to_s,
-        face_number: index + 1,
         owner: assignment_owner_label(assignment),
         path: "/images/#{assignment['image_id']}/cloak"
       }
@@ -68,21 +67,20 @@ module FaceCloak
       current_username = FaceCloak::Account.normalize_username(account.username)
 
       images.flat_map do |image|
-        image.faces.each_with_index.filter_map do |face, index|
+        image.faces.filter_map do |face|
           next unless face_assigned_to?(face, current_username, current_id)
           next if face_response_updated?(face)
 
-          assignment_notification(image, face, index)
+          assignment_notification(image, face)
         end
       end.first(MAX_NAV_NOTIFICATIONS)
     end
 
-    def assignment_notification(image, face, index)
+    def assignment_notification(image, face)
       owner = FaceCloak::Account.handle_for(image_owner_username(image))
       {
         image_id: image.id,
         face_id: face.id.to_s,
-        face_number: index + 1,
         owner: owner.empty? ? 'Someone' : owner,
         path: "/images/#{image.id}/cloak"
       }

@@ -19,11 +19,9 @@ module FaceCloak
 
     def route_respond_face(routing, image_id, face_id, auth_token)
       routing.post do
-        RespondFaceAssignment.new(FaceCloak::App.config).call(
-          face_id: face_id, cloak_type: routing.params['cloak_type'], auth_token: auth_token
-        )
+        save_face_response(face_id, routing.params, auth_token)
         flash[:notice] = 'Masking preference saved'
-        routing.redirect "/images/#{image_id}/cloak"
+        routing.redirect response_redirect_path(image_id, routing.params)
       rescue StandardError => e
         flash[:error] = "Could not save masking preference: #{e.message}"
         routing.redirect "/images/#{image_id}/#{safe_image_return_view(routing.params)}"
@@ -84,7 +82,7 @@ module FaceCloak
           auth_token: auth_token
         )
         flash[:notice] = 'Masking preference saved'
-        routing.redirect "/images/#{image_id}/cloak"
+        routing.redirect "/images/#{image_id}/raw?preview=cloak"
       else
         flash[:notice] = routing.params['action'] == 'remind' ? 'Notification sent' : 'Face assigned successfully'
         routing.redirect "/images/#{image_id}/raw"
@@ -104,6 +102,18 @@ module FaceCloak
     rescue StandardError => e
       App.logger.warn "ASSIGNMENT USER LOOKUP FAILED: #{e.inspect}"
       nil
+    end
+
+    def response_redirect_path(image_id, params)
+      return_view = safe_image_return_view(params)
+      preview = return_view == 'raw' ? '?preview=cloak' : ''
+      "/images/#{image_id}/#{return_view}#{preview}"
+    end
+
+    def save_face_response(face_id, params, auth_token)
+      RespondFaceAssignment.new(FaceCloak::App.config).call(
+        face_id: face_id, cloak_type: params['cloak_type'], auth_token: auth_token
+      )
     end
   end
 

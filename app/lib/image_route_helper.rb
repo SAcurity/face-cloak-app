@@ -9,13 +9,20 @@ module FaceCloak
     end
 
     def image_variant_response(routing, image_id, variant, auth_token)
-      api_path = variant == 'raw' ? "/images/#{image_id}/raw" : "/images/#{image_id}"
+      api_path = image_variant_api_path(routing, image_id, variant)
       api_res = HTTP.auth("Bearer #{auth_token}").get("#{FaceCloak::App.config.API_URL}#{api_path}")
 
       routing.halt(api_res.code, api_res.body.to_s) unless api_res.code == 200
 
       response['Content-Type'] = api_res.headers['Content-Type']
       api_res.body.to_s
+    end
+
+    def image_variant_api_path(routing, image_id, variant)
+      return "/images/#{image_id}/raw" if variant == 'raw'
+      return "/images/#{image_id}?self_preview=true" if routing.params['self_preview'] == 'true'
+
+      "/images/#{image_id}"
     end
 
     def image_detail_redirect(routing, image_id, requested_view, auth_token)
@@ -68,7 +75,8 @@ module FaceCloak
         image_logs: image_logs(image_id, auth_token),
         accounts_by_id: log_accounts_by_id(auth_token),
         is_owner: can_manage_faces, # 'is_owner' in view now means 'can manage faces'
-        view_type: view_type
+        view_type: view_type,
+        preview_cloak: request.params['preview'].to_s == 'cloak'
       }
     end
 

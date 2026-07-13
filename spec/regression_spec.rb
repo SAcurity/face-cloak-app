@@ -212,6 +212,22 @@ describe 'Regression: assigned faces remain revisitable after response' do
     _(source).must_include "    - if assignment_mode\n      - overlay_faces = box_faces"
   end
 
+  it 'raw edit mode previews cloak when the owner responded to their own assigned face' do
+    source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
+
+    _(source).must_match(/self_response_preview = assignment_mode && faces\.any\?/)
+    _(source).must_include "image_src_view = preview_cloak || self_response_preview ? 'cloak' : view_type"
+    _(source).must_include 'image_src_query = image_src_view =='
+    _(source).must_include "'?self_preview=true'"
+  end
+
+  it 'self preview image proxy forwards the API self preview query' do
+    source = File.read(File.expand_path('../app/lib/image_route_helper.rb', __dir__))
+
+    _(source).must_include 'self_preview=true'
+    _(source).must_match(/routing\.params\['self_preview'\] == 'true'/)
+  end
+
   it 'response mode only exposes faces assigned to the current account' do
     source = File.read(File.expand_path('../app/presentation/views/images/show.slim', __dir__))
     assigned_filter = 'my_assigned_faces = faces.select { |face| ' \
@@ -230,11 +246,11 @@ describe 'Regression: assigned faces remain revisitable after response' do
     _(route_source).wont_match(/policies\.can_manage_faces \|\|/)
   end
 
-  it 'self-assignment with a cloak choice returns to the cloaked image' do
+  it 'self-assignment with a cloak choice stays in edit mode with cloak preview' do
     source = File.read(File.expand_path('../app/controllers/images.rb', __dir__))
-    cloak_redirect = "routing.redirect \"/images/\#{image_id}/cloak\""
 
-    _(source.scan(cloak_redirect).length).must_be :>=, 2
+    _(source).must_include "routing.redirect \"/images/\#{image_id}/raw?preview=cloak\""
+    _(source).must_include "preview = return_view == 'raw' ? '?preview=cloak' : ''"
   end
 
   it 'profile assigned images are filtered by actual face assignment' do
@@ -275,6 +291,15 @@ describe 'Regression: notification unread controls' do
     _(source).must_match(/data-notification-read-all/)
     _(source).wont_match(/data-notification-unread-all/)
     _(source).must_match(/data-notification-id=notification_id/)
+  end
+
+  it 'notification copy avoids unstable face numbering' do
+    layout = File.read(File.expand_path('../app/presentation/views/layout.slim', __dir__))
+    helper = File.read(File.expand_path('../app/lib/navigation_helper.rb', __dir__))
+
+    _(layout).must_include 'A face needs your response'
+    _(layout).wont_include "Face \#{item[:face_number]} needs your response"
+    _(helper).wont_include 'face_number'
   end
 
   it 'common UI stores read notification state locally' do
